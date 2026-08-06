@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fines & Penalties - VSLA System</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h2>VSLA Manase</h2>
+    </div>
+    <ul class="nav-links">
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="members.html">Members</a></li>
+      <li><a href="savings.html">Savings</a></li>
+      <li><a href="loans.html">Loans</a></li>
+      <li><a href="fines.html" class="active">Fines</a></li>
+      <li><a href="welfare.html">Welfare</a></li>
+      <li><a href="meetings.html">Meetings</a></li>
+      <li><a href="reports.html">Reports</a></li>
+      <li><a href="#" id="logoutBtn">Logout</a></li>
+    </ul>
+  </nav>
+
+  <main class="container">
+    
+    <!-- Page Header -->
+    <header class="page-header">
+      <h1>Fines & Penalties Management</h1>
+      <p>Issue, track, and clear member fines and penalties.</p>
+    </header>
+
+    <!-- Summary Metrics Cards -->
+    <section class="stats-grid">
+      <div class="card stat-card">
+        <h3>Total Fines Issued</h3>
+        <p id="totalFinesCount">0</p>
+      </div>
+      <div class="card stat-card warning">
+        <h3>Unpaid Fines</h3>
+        <p id="unpaidFinesAmount">MWK 0</p>
+      </div>
+      <div class="card stat-card success">
+        <h3>Total Fines Paid</h3>
+        <p id="paidFinesAmount">MWK 0</p>
+      </div>
+    </section>
+
+    <div class="content-grid">
+      
+      <!-- Form Section: Issue New Fine -->
+      <section class="card form-card">
+        <h2>Issue New Fine</h2>
+        <form id="issueFineForm">
+          
+          <div class="form-group">
+            <label for="memberSelect">Select Member</label>
+            <select id="memberSelect" name="member_id" required>
+              <option value="">-- Loading Members... --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="fineReason">Reason for Fine</label>
+            <select id="fineReason" name="reason" required>
+              <option value="">-- Select Reason --</option>
+              <option value="Late Arrival">Late Arrival to Meeting</option>
+              <option value="Absenteeism">Unexcused Absence</option>
+              <option value="Late Loan Repayment">Late Loan Repayment</option>
+              <option value="Disruption">Meeting Disruption</option>
+              <option value="Other">Other Violation</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="fineAmount">Fine Amount (MWK)</label>
+            <input type="number" id="fineAmount" name="amount" placeholder="e.g. 1000" min="1" step="50" required>
+          </div>
+
+          <div class="form-group">
+            <label for="fineDate">Date Issued</label>
+            <input type="date" id="fineDate" name="date_issued" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Issue Fine</button>
+        </form>
+      </section>
+
+      <!-- Table Section: List of Fines -->
+      <section class="card table-card">
+        <div class="table-header">
+          <h2>Fines History</h2>
+          <div class="filter-group">
+            <label for="statusFilter">Status:</label>
+            <select id="statusFilter">
+              <option value="all">All</option>
+              <option value="unpaid">Unpaid</option>
+              <option value="paid">Paid</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Member Name</th>
+                <th>Reason</th>
+                <th>Amount (MWK)</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="finesTableBody">
+              <tr>
+                <td colspan="6" class="text-center">Loading fines...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- JavaScript Scripts -->
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/fines.js"></script>
+</body>
+</html>
