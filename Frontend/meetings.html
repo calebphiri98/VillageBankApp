@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meetings - Manase VSLA</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Manase VSLA</h2>
+        </div>
+        <ul class="nav-links">
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="members.html">Members</a></li>
+            <li><a href="savings.html">Savings</a></li>
+            <li><a href="loans.html">Loans</a></li>
+            <li><a href="welfare.html">Welfare</a></li>
+            <li><a href="#">Fines</a></li>
+            <li class="active"><a href="meetings.html">Meetings</a></li>
+            <li><a href="reports.html">Reports</a></li>
+            <li><a href="#" id="logoutBtn">Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="topbar">
+            <button class="menu-toggle" id="menuToggle">☰</button>
+            <h1>Meetings</h1>
+            <div class="user-info">
+                Welcome, <span id="userName">User</span>
+            </div>
+        </header>
+
+        <div class="page-actions">
+            <button class="btn-primary" id="addMeetingBtn">+ Record Meeting</button>
+        </div>
+
+        <div class="table-container">
+            <table id="meetingsTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Notes</th>
+                        <th>Recorded By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="meetingsTableBody">
+                    <tr>
+                        <td colspan="4">Loading meetings...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Record Meeting Modal -->
+    <div id="addMeetingModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close-btn" id="closeMeetingModal">&times;</span>
+            <h2>Record Meeting</h2>
+            <form id="addMeetingForm">
+                <div class="form-group">
+                    <label>Meeting Date</label>
+                    <input type="date" id="meeting_date" required>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="meeting_notes" rows="3" placeholder="Optional meeting notes" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Attendance</label>
+                    <div id="attendanceList" style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 8px;">
+                        <!-- Members will be loaded here -->
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">Save Meeting</button>
+            </form>
+            <p id="meetingFormMessage" class="error-message"></p>
+        </div>
+    </div>
+
+    <!-- View Attendance Modal -->
+    <div id="viewAttendanceModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeAttendanceModal">&times;</span>
+            <h2>Meeting Attendance</h2>
+            <div id="attendanceContent" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/meetings.js"></script>
+</body>
+</html>

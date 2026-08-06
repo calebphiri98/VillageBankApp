@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Members - Manase VSLA</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Manase VSLA</h2>
+        </div>
+        <ul class="nav-links">
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li class="active"><a href="members.html">Members</a></li>
+            <li><a href="savings.html">Savings</a></li>
+            <li><a href="loans.html">Loans</a></li>
+            <li><a href="welfare.html">Welfare</a></li>
+            <li><a href="#">Fines</a></li>
+            <li><a href="meetings.html">Meetings</a></li>
+            <li><a href="reports.html">Reports</a></li>
+            <li><a href="#" id="logoutBtn">Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="topbar">
+    <button class="menu-toggle" id="menuToggle">☰</button>
+            <h1>Members</h1>
+            <div class="user-info">
+                Welcome, <span id="userName">User</span>
+            </div>
+        </header>
+
+        <div class="page-actions">
+            <button class="btn-primary" id="addMemberBtn">+ Add New Member</button>
+        </div>
+
+        <div class="table-container">
+            <table id="membersTable">
+                <thead>
+                    <tr>
+                        <th>Membership No.</th>
+                        <th>Full Name</th>
+                        <th>Phone</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Date Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="membersTableBody">
+                    <tr>
+                        <td colspan="7">Loading members...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add Member Modal -->
+    <div id="addMemberModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeModal">&times;</span>
+            <h2>Add New Member</h2>
+            <form id="addMemberForm">
+                <div class="form-group">
+                    <label>Membership Number</label>
+                    <input type="text" id="membership_number" required placeholder="e.g. M002">
+                </div>
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="full_name" required placeholder="Enter full name">
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="text" id="phone" required placeholder="e.g. 0888123456">
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="role">
+                        <option value="member">Member</option>
+                        <option value="secretary">Secretary</option>
+                        <option value="treasurer">Treasurer</option>
+                        <option value="chairperson">Chairperson</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Date Joined</label>
+                    <input type="date" id="date_joined" required>
+                </div>
+                <button type="submit" class="btn-primary">Save Member</button>
+            </form>
+            <p id="formMessage" class="error-message"></p>
+        </div>
+    </div>
+
+    <!-- Edit Member Modal -->
+        <!-- Edit Member Modal -->
+    <div id="editMemberModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeEditModal">&times;</span>
+            <h2>Edit Member</h2>
+            <form id="editMemberForm">
+                <input type="hidden" id="edit_member_id">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="edit_full_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="text" id="edit_phone" required>
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="edit_role">
+                        <option value="member">Member</option>
+                        <option value="secretary">Secretary</option>
+                        <option value="treasurer">Treasurer</option>
+                        <option value="chairperson">Chairperson</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="edit_status">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Date Joined</label>
+                    <input type="date" id="edit_date_joined" required>
+                </div>
+                <button type="submit" class="btn-primary">Update Member</button>
+            </form>
+            <p id="editFormMessage" class="error-message"></p>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/members.js"></script>
+</body>
+</html>

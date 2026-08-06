@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Savings - Manase VSLA</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Manase VSLA</h2>
+        </div>
+        <ul class="nav-links">
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="members.html">Members</a></li>
+            <li class="active"><a href="savings.html">Savings</a></li>
+           <li><a href="loans.html">Loans</a></li>
+            <li><a href="welfare.html">Welfare</a></li>
+            <li><a href="#">Fines</a></li>
+            <li><a href="meetings.html">Meetings</a></li>
+            <li><a href="#">Reports</a></li>
+            <li><a href="#" id="logoutBtn">Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="topbar">
+            <button class="menu-toggle" id="menuToggle">☰</button>
+            <h1>Savings</h1>
+            <div class="user-info">
+                Welcome, <span id="userName">User</span>
+            </div>
+        </header>
+
+        <div class="page-actions">
+            <button class="btn-primary" id="addSavingBtn">+ Record Saving</button>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="dashboard-cards" style="margin-bottom: 25px;">
+            <div class="card">
+                <h3>Total Savings</h3>
+                <div class="value" id="totalSavings">MWK 0</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="savingsTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Member</th>
+                        <th>Membership No.</th>
+                        <th>Amount (MWK)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="savingsTableBody">
+                    <tr>
+                        <td colspan="5">Loading savings...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Record Saving Modal -->
+    <div id="addSavingModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeSavingModal">&times;</span>
+            <h2>Record Saving</h2>
+            <form id="addSavingForm">
+                <div class="form-group">
+                    <label>Member</label>
+                    <select id="saving_member_id" required>
+                        <option value="">Select Member</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Amount (MWK)</label>
+                    <input type="number" id="saving_amount" required min="1" placeholder="Enter amount">
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="saving_date" required>
+                </div>
+                <button type="submit" class="btn-primary">Save</button>
+            </form>
+            <p id="savingFormMessage" class="error-message"></p>
+        </div>
+    </div>
+
+        <!-- Edit Saving Modal -->
+    <div id="editSavingModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeEditSavingModal">&times;</span>
+            <h2>Edit Saving</h2>
+            <form id="editSavingForm">
+                <input type="hidden" id="edit_saving_id">
+                <div class="form-group">
+                    <label>Amount (MWK)</label>
+                    <input type="number" id="edit_saving_amount" required min="1">
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="edit_saving_date" required>
+                </div>
+                <button type="submit" class="btn-primary">Update Saving</button>
+            </form>
+            <p id="editSavingMessage" class="error-message"></p>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/savings.js"></script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loans - Manase VSLA</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Manase VSLA</h2>
+        </div>
+        <ul class="nav-links">
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="members.html">Members</a></li>
+            <li><a href="savings.html">Savings</a></li>
+            <li class="active"><a href="loans.html">Loans</a></li>
+            <li><a href="welfare.html">Welfare</a></li>
+            <li><a href="#">Fines</a></li>
+            <li><a href="meetings.html">Meetings</a></li>
+            <li><a href="reports.html">Reports</a></li>
+            <li><a href="#" id="logoutBtn">Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="topbar">
+            <button class="menu-toggle" id="menuToggle">☰</button>
+            <h1>Loans</h1>
+            <div class="user-info">
+                Welcome, <span id="userName">User</span>
+            </div>
+        </header>
+
+        <div class="page-actions">
+            <button class="btn-primary" id="applyLoanBtn">+ Apply for Loan</button>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="dashboard-cards" style="margin-bottom: 25px;">
+            <div class="card">
+                <h3>Active Loans</h3>
+                <div class="value" id="activeLoansCount">0</div>
+            </div>
+            <div class="card">
+                <h3>Outstanding Amount</h3>
+                <div class="value" id="outstandingAmount">MWK 0</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="loansTable">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Amount</th>
+                        <th>Interest</th>
+                        <th>Total Due</th>
+                        <th>Outstanding</th>
+                        <th>Status</th>
+                        <th>Due Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="loansTableBody">
+                    <tr>
+                        <td colspan="8">Loading loans...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Apply Loan Modal -->
+    <div id="applyLoanModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeApplyModal">&times;</span>
+            <h2>Apply for Loan</h2>
+            <form id="applyLoanForm">
+                <div class="form-group">
+                    <label>Member</label>
+                    <select id="loan_member_id" required>
+                        <option value="">Select Member</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Amount (MWK)</label>
+                    <input type="number" id="loan_amount" required min="1" placeholder="Enter loan amount">
+                </div>
+                <div class="form-group">
+                    <label>Interest Rate (%)</label>
+                    <input type="number" id="loan_interest" value="10" required min="0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Due Date</label>
+                    <input type="date" id="loan_due_date" required>
+                </div>
+                <button type="submit" class="btn-primary">Submit Application</button>
+            </form>
+            <p id="applyFormMessage" class="error-message"></p>
+        </div>
+    </div>
+
+    <!-- Record Repayment Modal -->
+    <div id="repayModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeRepayModal">&times;</span>
+            <h2>Record Repayment</h2>
+            <form id="repayForm">
+                <input type="hidden" id="repay_loan_id">
+                <div class="form-group">
+                    <label>Amount (MWK)</label>
+                    <input type="number" id="repay_amount" required min="1" placeholder="Enter repayment amount">
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="repay_date" required>
+                </div>
+                <button type="submit" class="btn-primary">Record Repayment</button>
+            </form>
+            <p id="repayFormMessage" class="error-message"></p>
+        </div>
+    </div>
+
+        <!-- Loan Statement Modal -->
+    <div id="statementModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close-btn" id="closeStatementModal">&times;</span>
+            <h2>Loan Statement</h2>
+            <div id="statementContent" style="margin-top: 20px; line-height: 1.7; font-size: 15px;">
+                <!-- Statement will be inserted here -->
+            </div>
+            <div style="margin-top: 25px; text-align: right;">
+                <button class="btn-primary" id="printStatementBtn" style="width: auto; padding: 10px 20px;">Print / Save as PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/loans.js"></script>
+</body>
+</html>

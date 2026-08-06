@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Manase VSLA</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Manase VSLA</h2>
+        </div>
+        <ul class="nav-links">
+            <li class="active"><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="members.html">Members</a></li>
+            <li><a href="savings.html">Savings</a></li>
+            <li><a href="loans.html">Loans</a></li>
+            <li><a href="welfare.html">Welfare</a></li>
+            <li><a href="#">Fines</a></li>
+            <li><a href="meetings.html">Meetings</a></li>
+           <li><a href="reports.html">Reports</a></li>
+            <li><a href="#" id="logoutBtn">Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+       <header class="topbar">
+    <button class="menu-toggle" id="menuToggle">☰</button>
+            <h1>Dashboard</h1>
+            <div class="user-info">
+                Welcome, <span id="userName">User</span>
+            </div>
+        </header>
+
+        <div class="dashboard-cards" id="dashboardCards">
+            <!-- Cards will be loaded here by JavaScript -->
+            <p>Loading dashboard data...</p>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
