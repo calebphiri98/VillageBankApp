@@ -66,7 +66,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
-            const result = await apiRequest('/shareout', 'POST', { cycle_id: null });
+            // First try to get the active cycle
+            let cycleId = null;
+            try {
+                const activeCycle = await apiRequest('/cycles/active');
+                cycleId = activeCycle.id;
+            } catch (e) {
+                console.log('No active cycle found, proceeding without cycle_id');
+            }
+
+            const result = await apiRequest('/shareout', 'POST', { cycle_id: cycleId });
 
             // Show breakdown cards
             const breakdown = result.breakdown;
@@ -119,7 +128,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             alert('Share-Out calculated successfully!');
 
         } catch (error) {
-            alert('Error calculating Share-Out: ' + error.message);
+            console.error('Share-Out Error:', error);
+            alert('Error calculating Share-Out: ' + (error.message || error));
         }
     });
 
