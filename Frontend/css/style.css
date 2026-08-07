@@ -388,3 +388,94 @@ td {
     padding: 12px 20px;
     display: inline-block;
 }
+
+/* ========== DESIGN IMPROVEMENTS ========== */
+
+body {
+    background-color: #f4f6f9;
+}
+
+.sidebar {
+    background: linear-gradient(180deg, #1a73e8 0%, #0d47a1 100%);
+    box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+}
+
+.sidebar-header {
+    padding: 25px 15px;
+}
+
+.sidebar-header h2 {
+    font-size: 22px;
+    letter-spacing: 0.5px;
+}
+
+.sidebar-header h2 i {
+    margin-right: 8px;
+}
+
+.nav-links li a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    transition: all 0.2s ease;
+}
+
+.nav-links li a i {
+    width: 22px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.nav-links li:hover {
+    background-color: rgba(255,255,255,0.12);
+}
+
+.nav-links li.active {
+    background-color: rgba(255,255,255,0.2);
+    border-left: 4px solid #fff;
+}
+
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-top: 4px solid #1a73e8;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.card h3 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+}
+
+.table-container {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+}
+
+.topbar h1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.login-box {
+    border-top: 5px solid #1a73e8;
+}
+
+.login-box h1 i {
+    margin-right: 8px;
+}
