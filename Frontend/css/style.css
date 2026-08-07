@@ -380,3 +380,11 @@ td {
         font-size: 18px;
     }
 }
+
+/* Make action buttons consistent size */
+.page-actions .btn-primary {
+    width: auto;
+    min-width: 180px;
+    padding: 12px 20px;
+    display: inline-block;
+}

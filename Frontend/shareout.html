@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share-Out - Manase VSLA</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Manase VSLA</h2>
+        </div>
+        <ul class="nav-links">
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="members.html">Members</a></li>
+            <li><a href="savings.html">Savings</a></li>
+            <li><a href="loans.html">Loans</a></li>
+            <li><a href="welfare.html">Welfare</a></li>
+            <li><a href="fines.html">Fines</a></li>
+            <li><a href="meetings.html">Meetings</a></li>
+            <li><a href="reports.html">Reports</a></li>
+            <li class="active"><a href="shareout.html">Share-Out</a></li>
+            <li><a href="#" id="logoutBtn">Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="topbar">
+            <button class="menu-toggle" id="menuToggle">☰</button>
+            <h1>Share-Out</h1>
+            <div class="user-info">
+                Welcome, <span id="userName">User</span>
+            </div>
+        </header>
+
+        <div class="page-actions">
+            <button class="btn-primary" id="performShareOutBtn">Calculate Share-Out</button>
+        </div>
+
+        <!-- Breakdown Cards (shown after calculation) -->
+        <div class="dashboard-cards" id="breakdownCards" style="margin-bottom: 25px; display: none;">
+            <!-- Will be filled by JavaScript -->
+        </div>
+
+        <!-- Share Results -->
+        <div class="table-container" id="sharesContainer" style="display: none;">
+            <h2 style="padding: 15px 20px 10px; font-size: 18px;">Member Shares</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Membership No.</th>
+                        <th>Full Name</th>
+                        <th>Member Savings</th>
+                        <th>Share Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="sharesTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Previous Share-Outs -->
+        <div class="table-container" style="margin-top: 30px;">
+            <h2 style="padding: 15px 20px 10px; font-size: 18px;">Previous Share-Outs</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Total Fund</th>
+                        <th>Members</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr>
+                        <td colspan="4">Loading history...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/shareout.js"></script>
+</body>
+</html>
