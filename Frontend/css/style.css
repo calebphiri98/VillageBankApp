@@ -6,7 +6,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f0f2f5;
+    background-color: #f4f6f9;
     color: #333;
 }
 
@@ -31,12 +31,17 @@ body {
     border-radius: 12px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     text-align: center;
+    border-top: 5px solid #1a73e8;
 }
 
 .login-box h1 {
     color: #1a73e8;
     margin-bottom: 5px;
     font-size: 28px;
+}
+
+.login-box h1 i {
+    margin-right: 8px;
 }
 
 .subtitle {
@@ -81,11 +86,13 @@ body {
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.2s ease;
 }
 
 .btn-primary:hover {
     background-color: #1557b0;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
 }
 
 .error-message {
@@ -95,49 +102,73 @@ body {
     min-height: 20px;
 }
 
-/* ========== DASHBOARD LAYOUT ========== */
+/* ========== SIDEBAR ========== */
 .sidebar {
     width: 250px;
     height: 100vh;
-    background-color: #1a73e8;
+    background: linear-gradient(180deg, #1a73e8 0%, #0d47a1 100%);
     color: white;
     position: fixed;
     left: 0;
     top: 0;
     padding-top: 20px;
+    z-index: 100;
+    box-shadow: 4px 0 15px rgba(0,0,0,0.1);
 }
 
 .sidebar-header {
     text-align: center;
-    padding: 20px 10px;
+    padding: 20px 15px;
     border-bottom: 1px solid rgba(255,255,255,0.2);
 }
 
 .sidebar-header h2 {
     font-size: 22px;
+    color: white;
+    letter-spacing: 0.5px;
+}
+
+.sidebar-header h2 i {
+    margin-right: 8px;
 }
 
 .nav-links {
     list-style: none;
-    margin-top: 30px;
+    margin-top: 20px;
+    padding: 0;
 }
 
 .nav-links li {
-    padding: 12px 25px;
+    padding: 0;
 }
 
 .nav-links li a {
     color: white;
     text-decoration: none;
-    font-size: 16px;
-    display: block;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 25px;
+    transition: background 0.2s;
 }
 
-.nav-links li:hover,
-.nav-links li.active {
+.nav-links li a i {
+    width: 20px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.nav-links li:hover a,
+.nav-links li.active a {
     background-color: rgba(255,255,255,0.15);
 }
 
+.nav-links li.active {
+    border-left: 4px solid white;
+}
+
+/* ========== MAIN CONTENT ========== */
 .main-content {
     margin-left: 250px;
     padding: 20px 30px;
@@ -153,6 +184,9 @@ body {
 .topbar h1 {
     font-size: 26px;
     color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .user-info {
@@ -160,7 +194,7 @@ body {
     color: #555;
 }
 
-/* Dashboard Cards */
+/* ========== CARDS ========== */
 .dashboard-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -173,6 +207,13 @@ body {
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     text-align: center;
+    border-top: 4px solid #1a73e8;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
 }
 
 .card h3 {
@@ -180,6 +221,10 @@ body {
     color: #666;
     margin-bottom: 10px;
     text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .card .value {
@@ -188,15 +233,22 @@ body {
     color: #1a73e8;
 }
 
-/* ========== TABLE STYLES ========== */
+/* ========== TABLES ========== */
 .page-actions {
     margin-bottom: 20px;
+}
+
+.page-actions .btn-primary {
+    width: auto;
+    min-width: 180px;
+    padding: 12px 20px;
+    display: inline-block;
 }
 
 .table-container {
     background: white;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
     overflow-x: auto;
 }
 
@@ -306,7 +358,8 @@ td {
 }
 
 .modal-content input,
-.modal-content select {
+.modal-content select,
+.modal-content textarea {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid #ddd;
@@ -327,7 +380,6 @@ td {
 
 @media (max-width: 768px) {
     .sidebar {
-        width: 250px;
         left: -250px;
         transition: left 0.3s ease;
         z-index: 1000;
@@ -379,103 +431,4 @@ td {
     .sidebar-header h2 {
         font-size: 18px;
     }
-}
-
-/* Make action buttons consistent size */
-.page-actions .btn-primary {
-    width: auto;
-    min-width: 180px;
-    padding: 12px 20px;
-    display: inline-block;
-}
-
-/* ========== DESIGN IMPROVEMENTS ========== */
-
-body {
-    background-color: #f4f6f9;
-}
-
-.sidebar {
-    background: linear-gradient(180deg, #1a73e8 0%, #0d47a1 100%);
-    box-shadow: 4px 0 15px rgba(0,0,0,0.1);
-}
-
-.sidebar-header {
-    padding: 25px 15px;
-}
-
-.sidebar-header h2 {
-    font-size: 22px;
-    letter-spacing: 0.5px;
-}
-
-.sidebar-header h2 i {
-    margin-right: 8px;
-}
-
-.nav-links li a {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 0;
-    transition: all 0.2s ease;
-}
-
-.nav-links li a i {
-    width: 22px;
-    text-align: center;
-    font-size: 16px;
-}
-
-.nav-links li:hover {
-    background-color: rgba(255,255,255,0.12);
-}
-
-.nav-links li.active {
-    background-color: rgba(255,255,255,0.2);
-    border-left: 4px solid #fff;
-}
-
-.card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border-top: 4px solid #1a73e8;
-}
-
-.card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-}
-
-.card h3 {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.btn-primary {
-    transition: all 0.2s ease;
-}
-
-.btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
-}
-
-.table-container {
-    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-}
-
-.topbar h1 {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.login-box {
-    border-top: 5px solid #1a73e8;
-}
-
-.login-box h1 i {
-    margin-right: 8px;
 }

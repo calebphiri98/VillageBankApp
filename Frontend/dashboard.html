@@ -10,27 +10,28 @@
 <body>
 
     <!-- Sidebar -->
-    <div class="sidebar-header">
-    <h2><i class="fas fa-landmark"></i> Manase VSLA</h2>
-</div>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-landmark"></i> Manase VSLA</h2>
+        </div>
         <ul class="nav-links">
-   <li class="active"><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
-    <li><a href="members.html"><i class="fas fa-users"></i> Members</a></li>
-    <li><a href="savings.html"><i class="fas fa-piggy-bank"></i> Savings</a></li>
-    <li><a href="loans.html"><i class="fas fa-hand-holding-usd"></i> Loans</a></li>
-    <li><a href="welfare.html"><i class="fas fa-heartbeat"></i> Welfare</a></li>
-    <li><a href="fines.html"><i class="fas fa-exclamation-circle"></i> Fines</a></li>
-    <li><a href="meetings.html"><i class="fas fa-calendar-alt"></i> Meetings</a></li>
-    <li><a href="reports.html"><i class="fas fa-chart-bar"></i> Reports</a></li>
-    <li><a href="shareout.html"><i class="fas fa-share-alt"></i> Share-Out</a></li>
-    <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-    </ul>
+            <li class="active"><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="members.html"><i class="fas fa-users"></i> Members</a></li>
+            <li><a href="savings.html"><i class="fas fa-piggy-bank"></i> Savings</a></li>
+            <li><a href="loans.html"><i class="fas fa-hand-holding-usd"></i> Loans</a></li>
+            <li><a href="welfare.html"><i class="fas fa-heartbeat"></i> Welfare</a></li>
+            <li><a href="fines.html"><i class="fas fa-exclamation-circle"></i> Fines</a></li>
+            <li><a href="meetings.html"><i class="fas fa-calendar-alt"></i> Meetings</a></li>
+            <li><a href="reports.html"><i class="fas fa-chart-bar"></i> Reports</a></li>
+            <li><a href="shareout.html"><i class="fas fa-share-alt"></i> Share-Out</a></li>
+            <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
     </div>
 
     <!-- Main Content -->
     <div class="main-content">
-       <header class="topbar">
-    <button class="menu-toggle" id="menuToggle">☰</button>
+        <header class="topbar">
+            <button class="menu-toggle" id="menuToggle">☰</button>
             <h1><i class="fas fa-home"></i> Dashboard</h1>
             <div class="user-info">
                 Welcome, <span id="userName">User</span>
@@ -38,12 +39,9 @@
         </header>
 
         <div class="dashboard-cards" id="dashboardCards">
-            <!-- Cards will be loaded here by JavaScript -->
             <p>Loading dashboard data...</p>
         </div>
     </div>
-
-
 
     <script src="js/api.js"></script>
     <script src="js/dashboard.js"></script>

@@ -9,25 +9,24 @@
 </head>
 <body>
 
-    <!-- Sidebar -->
-    <div class="sidebar-header">
-    <h2><i class="fas fa-landmark"></i> Manase VSLA</h2>
-</div>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-landmark"></i> Manase VSLA</h2>
+        </div>
         <ul class="nav-links">
-    <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
-    <li><a href="members.html"><i class="fas fa-users"></i> Members</a></li>
-    <li><a href="savings.html"><i class="fas fa-piggy-bank"></i> Savings</a></li>
-    <li><a href="loans.html"><i class="fas fa-hand-holding-usd"></i> Loans</a></li>
-    <li><a href="welfare.html"><i class="fas fa-heartbeat"></i> Welfare</a></li>
-    <li class="active"><a href="fines.html"><i class="fas fa-exclamation-circle"></i> Fines</a></li>
-    <li><a href="meetings.html"><i class="fas fa-calendar-alt"></i> Meetings</a></li>
-    <li><a href="reports.html"><i class="fas fa-chart-bar"></i> Reports</a></li>
-    <li><a href="shareout.html"><i class="fas fa-share-alt"></i> Share-Out</a></li>
-    <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-</ul>
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="members.html"><i class="fas fa-users"></i> Members</a></li>
+            <li><a href="savings.html"><i class="fas fa-piggy-bank"></i> Savings</a></li>
+            <li><a href="loans.html"><i class="fas fa-hand-holding-usd"></i> Loans</a></li>
+            <li><a href="welfare.html"><i class="fas fa-heartbeat"></i> Welfare</a></li>
+            <li class="active"><a href="fines.html"><i class="fas fa-exclamation-circle"></i> Fines</a></li>
+            <li><a href="meetings.html"><i class="fas fa-calendar-alt"></i> Meetings</a></li>
+            <li><a href="reports.html"><i class="fas fa-chart-bar"></i> Reports</a></li>
+            <li><a href="shareout.html"><i class="fas fa-share-alt"></i> Share-Out</a></li>
+            <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <header class="topbar">
             <button class="menu-toggle" id="menuToggle">☰</button>
@@ -37,7 +36,6 @@
             </div>
         </header>
 
-        <!-- Summary Card -->
         <div class="dashboard-cards" style="margin-bottom: 25px;">
             <div class="card">
                 <h3>Total Fines</h3>
@@ -84,11 +82,11 @@
                 </div>
                 <div class="form-group">
                     <label>Amount (MWK)</label>
-                    <input type="number" id="fine_amount" required min="1" placeholder="Enter fine amount">
+                    <input type="number" id="fine_amount" required min="1" placeholder="Enter amount">
                 </div>
                 <div class="form-group">
                     <label>Reason</label>
-                    <input type="text" id="fine_reason" required placeholder="e.g. Late savings, Absenteeism">
+                    <input type="text" id="fine_reason" required placeholder="e.g. Late savings, Absent from meeting">
                 </div>
                 <div class="form-group">
                     <label>Date</label>
