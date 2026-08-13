@@ -1,6 +1,7 @@
 const db = require('../config/db');
 
-// Apply for a loan
+// Apply for a loan (with borrowing conditions)
+// Apply for a loan (with borrowing conditions)
 const applyLoan = async (req, res) => {
     const { member_id, amount, interest_rate, due_date } = req.body;
     const applied_by = req.user.id;
@@ -10,8 +11,12 @@ const applyLoan = async (req, res) => {
             return res.status(400).json({ message: 'Member ID and a valid amount are required' });
         }
 
+        // 1. Check if member exists and is active
         const [member] = await db.query(
-            `SELECT id FROM members WHERE id = ? AND status = 'active'`,
+            `SELECT m.id, u.full_name, u.phone 
+             FROM members m 
+             JOIN users u ON m.user_id = u.id 
+             WHERE m.id = ? AND m.status = 'active'`,
             [member_id]
         );
 
@@ -19,31 +24,77 @@ const applyLoan = async (req, res) => {
             return res.status(404).json({ message: 'Active member not found' });
         }
 
-        const [result] = await db.query(
-            `INSERT INTO loans (member_id, amount, interest_rate, status, due_date) 
-             VALUES (?, ?, ?, 'pending', ?)`,
-            [member_id, amount, interest_rate || 10.00, due_date || null]
+        // 2. Check if member already has a pending or approved loan
+        const [existingLoan] = await db.query(
+            `SELECT id, status FROM loans 
+             WHERE member_id = ? AND status IN ('pending', 'approved')`,
+            [member_id]
         );
 
+        if (existingLoan.length > 0) {
+            return res.status(400).json({ 
+                message: `Member already has a ${existingLoan[0].status} loan. Cannot apply for a new one.` 
+            });
+        }
+
+        // 3. Get member's total savings
+        const [savingsResult] = await db.query(
+            `SELECT COALESCE(SUM(amount), 0) as total_savings 
+             FROM savings WHERE member_id = ?`,
+            [member_id]
+        );
+        const totalSavings = parseFloat(savingsResult[0].total_savings);
+
+        // 4. Borrowing limit: Maximum loan = 3 × total savings
+        const maxLoanAmount = totalSavings * 3;
+
+        if (totalSavings <= 0) {
+            return res.status(400).json({ 
+                message: 'Member has no savings. Cannot apply for a loan.' 
+            });
+        }
+
+        if (parseFloat(amount) > maxLoanAmount) {
+            return res.status(400).json({ 
+                message: `Loan amount exceeds the allowed limit. Maximum allowed is MWK ${maxLoanAmount.toLocaleString()} (3 × savings of MWK ${totalSavings.toLocaleString()})` 
+            });
+        }
+
+        // 5. Create the loan application (without applied_by to avoid column errors)
+        const [result] = await db.query(
+            `INSERT INTO loans (member_id, amount, interest_rate, status, due_date)
+             VALUES (?, ?, ?, 'pending', ?)`,
+            [member_id, amount, interest_rate || 10, due_date || null]
+        );
+
+        // Audit log
         await db.query(
-            `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details) 
+            `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
              VALUES (?, 'APPLY_LOAN', 'loans', ?, ?)`,
             [applied_by, result.insertId, `Amount: ${amount}`]
         );
 
-        res.status(201).json({ 
-            message: 'Loan application submitted successfully', 
-            loanId: result.insertId 
+        res.status(201).json({
+            message: 'Loan application submitted successfully',
+            loanId: result.insertId,
+            max_allowed: maxLoanAmount,
+            member_savings: totalSavings
         });
+
     } catch (error) {
-        res.status(500).json({ message: 'Error applying for loan', error: error.message });
+        console.error('Apply Loan Error:', error.message);
+        res.status(500).json({ 
+            message: 'Error applying for loan', 
+            error: error.message 
+        });
     }
 };
 // Reject or approve loan
+// Approve or Reject a loan
 const updateLoanStatus = async (req, res) => {
     const { status } = req.body;
     const loanId = req.params.id;
-    const approved_by = req.user.id;
+    const updated_by = req.user.id;
 
     try {
         if (!['approved', 'rejected'].includes(status)) {
@@ -52,22 +103,25 @@ const updateLoanStatus = async (req, res) => {
 
         // Get loan + member details before updating
         const [loanData] = await db.query(`
-            SELECT l.amount, u.full_name, u.phone
+            SELECT l.amount, l.status, u.full_name, u.phone
             FROM loans l
             JOIN members m ON l.member_id = m.id
             JOIN users u ON m.user_id = u.id
-            WHERE l.id = ? AND l.status = 'pending'
+            WHERE l.id = ?
         `, [loanId]);
 
         if (loanData.length === 0) {
-            return res.status(404).json({ message: 'Pending loan not found' });
+            return res.status(404).json({ message: 'Loan not found' });
         }
 
+        if (loanData[0].status !== 'pending') {
+            return res.status(400).json({ message: 'Only pending loans can be approved or rejected' });
+        }
+
+        // Update status only (no approved_by column to avoid errors)
         const [result] = await db.query(
-            `UPDATE loans 
-             SET status = ?, approved_by = ? 
-             WHERE id = ? AND status = 'pending'`,
-            [status, approved_by, loanId]
+            `UPDATE loans SET status = ? WHERE id = ? AND status = 'pending'`,
+            [status, loanId]
         );
 
         if (result.affectedRows === 0) {
@@ -78,25 +132,30 @@ const updateLoanStatus = async (req, res) => {
         await db.query(
             `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details) 
              VALUES (?, ?, 'loans', ?, ?)`,
-            [approved_by, status === 'approved' ? 'APPROVE_LOAN' : 'REJECT_LOAN', loanId, `Status changed to ${status}`]
+            [updated_by, status === 'approved' ? 'APPROVE_LOAN' : 'REJECT_LOAN', loanId, `Status changed to ${status}`]
         );
 
-        // ===== AUTOMATIC SMS =====
+        // Automatic SMS
         if (loanData[0].phone) {
-            const { sendSMS } = require('../utils/smsService');
-            let message = '';
+            try {
+                const { sendSMS } = require('../utils/smsService');
+                let message = '';
 
-            if (status === 'approved') {
-                message = `Dear ${loanData[0].full_name}, your loan of MWK ${loanData[0].amount} has been APPROVED. - Manase VSLA`;
-            } else {
-                message = `Dear ${loanData[0].full_name}, your loan application of MWK ${loanData[0].amount} has been REJECTED. - Manase VSLA`;
+                if (status === 'approved') {
+                    message = `Dear ${loanData[0].full_name}, your loan of MWK ${loanData[0].amount} has been APPROVED. - Manase VSLA`;
+                } else {
+                    message = `Dear ${loanData[0].full_name}, your loan application of MWK ${loanData[0].amount} has been REJECTED. - Manase VSLA`;
+                }
+
+                await sendSMS(loanData[0].phone, message, updated_by);
+            } catch (smsError) {
+                console.error('SMS failed:', smsError.message);
             }
-
-            await sendSMS(loanData[0].phone, message, approved_by);
         }
 
         res.json({ message: `Loan ${status} successfully` });
     } catch (error) {
+        console.error('Update Loan Status Error:', error.message);
         res.status(500).json({ message: 'Error updating loan status', error: error.message });
     }
 };

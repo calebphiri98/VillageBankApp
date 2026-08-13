@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manase VSLA - Village Savings & Loan Association</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* ===== LANDING PAGE STYLES ===== */
+        .landing-nav {
+            background: #1a73e8;
+            color: white;
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+
+        .landing-nav .logo {
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .landing-nav ul {
+            list-style: none;
+            display: flex;
+            gap: 30px;
+            margin: 0;
+            padding: 0;
+            align-items: center;
+        }
+
+        .landing-nav ul a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.3s;
+        }
+
+        .landing-nav ul a:hover {
+            opacity: 0.85;
+        }
+
+        .nav-login-btn {
+            background: white;
+            color: #1a73e8 !important;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-weight: 600 !important;
+        }
+
+        /* Hero */
+                .hero {
+            background:
+                linear-gradient(135deg, rgba(26,115,232,0.90), rgba(13,71,161,0.93)),
+                url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1600&q=80')
+                center/cover no-repeat;
+            color: white;
+            padding: 90px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .hero-text {
+            flex: 1;
+            min-width: 300px;
+            max-width: 560px;
+        }
+
+        .hero-text h1 {
+            font-size: 42px;
+            line-height: 1.25;
+            margin-bottom: 18px;
+        }
+
+        .hero-text p {
+            font-size: 18px;
+            opacity: 0.95;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-hero {
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-hero:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-hero-primary {
+            background: white;
+            color: #1a73e8;
+        }
+
+        .btn-hero-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .hero-visual {
+            flex: 1;
+            min-width: 280px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .money-card {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 16px;
+            padding: 25px 20px;
+            text-align: center;
+            width: 150px;
+        }
+
+        .money-card i {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .money-card h3 {
+            font-size: 15px;
+            margin-bottom: 6px;
+        }
+
+        .money-card p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        /* Sections */
+        .section {
+            padding: 70px 40px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 45px;
+        }
+
+        .section-title h2 {
+            font-size: 32px;
+            color: #1a73e8;
+            margin-bottom: 10px;
+        }
+
+        .section-title p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        /* Features */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 25px;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 14px;
+            padding: 30px 22px;
+            text-align: center;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+            transition: transform 0.25s, box-shadow 0.25s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+        }
+
+        .feature-card i {
+            font-size: 40px;
+            color: #1a73e8;
+            margin-bottom: 15px;
+        }
+
+        .feature-card h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .feature-card p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        /* About */
+        .about-box {
+            background: #f0f7ff;
+            border-radius: 16px;
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .about-box h3 {
+            color: #1a73e8;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .about-box p {
+            color: #444;
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+
+        .about-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .stat-item i {
+            font-size: 28px;
+            color: #1a73e8;
+            margin-bottom: 8px;
+        }
+
+        .stat-item h4 {
+            font-size: 22px;
+            color: #1a73e8;
+            margin-bottom: 4px;
+        }
+
+        .stat-item p {
+            font-size: 13px;
+            color: #666;
+            margin: 0;
+        }
+
+        /* FAQ */
+        .faq-item {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 18px 22px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #333;
+        }
+
+        .faq-question:hover {
+            background: #f8f9fa;
+        }
+
+        .faq-answer {
+            padding: 0 22px 18px;
+            color: #555;
+            line-height: 1.6;
+            display: none;
+        }
+
+        .faq-item.open .faq-answer {
+            display: block;
+        }
+
+        .faq-item.open .faq-question i {
+            transform: rotate(180deg);
+        }
+
+        /* Contact */
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .contact-card {
+            background: white;
+            border-radius: 14px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+        }
+
+        .contact-card i {
+            font-size: 36px;
+            color: #1a73e8;
+            margin-bottom: 12px;
+        }
+
+        .contact-card h3 {
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .contact-card p {
+            color: #666;
+            font-size: 15px;
+        }
+
+        /* Footer */
+        .landing-footer {
+            background: #0d47a1;
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+            margin-top: 20px;
+        }
+
+        .landing-footer p {
+            margin: 5px 0;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .landing-nav {
+                flex-direction: column;
+                gap: 12px;
+                padding: 15px 20px;
+            }
+
+            .landing-nav ul {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 15px;
+            }
+
+            .hero {
+                padding: 50px 20px;
+                text-align: center;
+            }
+            
+
+            .hero-text h1 {
+                font-size: 30px;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .section {
+                padding: 50px 20px;
+            }
+
+            .about-box {
+                grid-template-columns: 1fr;
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <div class="logo">
+            <i class="fas fa-landmark"></i> Manase VSLA
+        </div>
+        <ul>
+            <li><a href="#about">About</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#join">Join</a></li>
+            <li><a href="#contact">Contact</a></li>
+            <li><a href="index.html" class="nav-login-btn">Login</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-text">
+            <h1>Empowering Communities Through Savings & Loans</h1>
+            <p>
+                Manase VSLA is a modern digital platform that helps village savings groups
+                manage members, savings, loans, welfare, and share-outs with transparency and ease.
+            </p>
+            <div class="hero-buttons">
+                <a href="index.html" class="btn-hero btn-hero-primary">
+                    <i class="fas fa-sign-in-alt"></i> Login to System
+                </a>
+                <a href="#features" class="btn-hero btn-hero-secondary">
+                    Learn More
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-visual">
+            <div class="money-card">
+                <i class="fas fa-piggy-bank"></i>
+                <h3>Savings</h3>
+                <p>Track contributions</p>
+            </div>
+            <div class="money-card">
+                <i class="fas fa-hand-holding-usd"></i>
+                <h3>Loans</h3>
+                <p>Fair borrowing</p>
+            </div>
+            <div class="money-card">
+                <i class="fas fa-chart-line"></i>
+                <h3>Growth</h3>
+                <p>See progress</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="section" id="about">
+        <div class="section-title">
+            <h2>About Manase VSLA</h2>
+            <p>A digital solution for Village Savings and Loan Associations</p>
+        </div>
+
+        <div class="about-box">
+            <div>
+                <h3>Building Financial Strength Together</h3>
+                <p>
+                    Manase VSLA supports community-based savings groups by replacing
+                    paper records with a secure, easy-to-use digital system.
+                </p>
+                <p>
+                    Committee members can manage savings, approve loans, record fines,
+                    track welfare support, and perform end-of-cycle share-outs — all in one place.
+                </p>
+                <p>
+                    The system is designed to be simple enough for everyday use on phones
+                    and computers, while providing clear financial records for accountability.
+                </p>
+            </div>
+            <div class="about-stats">
+                <div class="stat-item">
+                    <i class="fas fa-users"></i>
+                    <h4>Members</h4>
+                    <p>Easy registration</p>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <h4>Secure</h4>
+                    <p>Role-based access</p>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-mobile-alt"></i>
+                    <h4>Mobile</h4>
+                    <p>Works on phones</p>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-sms"></i>
+                    <h4>SMS</h4>
+                    <p>Instant alerts</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section" id="features" style="background: #f8fafc;">
+        <div class="section-title">
+            <h2>System Features</h2>
+            <p>Everything a VSLA needs in one platform</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-users"></i>
+                <h3>Member Management</h3>
+                <p>Register members, assign roles, and manage active or inactive status.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-piggy-bank"></i>
+                <h3>Savings Tracking</h3>
+                <p>Record weekly savings and view total contributions per member.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-hand-holding-usd"></i>
+                <h3>Loan Management</h3>
+                <p>Apply, approve, repay loans with interest and clear statements.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-heartbeat"></i>
+                <h3>Welfare Fund</h3>
+                <p>Manage social support contributions and assistance payouts.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-exclamation-circle"></i>
+                <h3>Fines & Discipline</h3>
+                <p>Record fines for late payments or absences fairly and transparently.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-chart-bar"></i>
+                <h3>Reports & Analytics</h3>
+                <p>View summaries, member finances, and system activity at a glance.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="section" id="faq">
+        <div class="section-title">
+            <h2>Frequently Asked Questions</h2>
+            <p>Common questions about the Manase VSLA system</p>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                What is a VSLA?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                A Village Savings and Loan Association (VSLA) is a community group where members
+                save money together, borrow when needed, and share the profits at the end of a cycle.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                Who can use this system?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                The system is mainly used by committee members (Chairperson, Treasurer, Secretary)
+                and administrators. Ordinary members can also view their own records when given access.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                How is the maximum loan calculated?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                A member can borrow up to 3 times their total savings. This protects the group fund
+                and encourages regular saving.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                Can the system send SMS notifications?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                Yes. The system can send SMS alerts when savings are recorded, loans are approved,
+                repayments are made, fines are issued, or meetings are scheduled.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                Is the system mobile-friendly?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                Yes. The system works on smartphones, tablets, and computers through a web browser,
+                making it easy for users in the community to access it.
+            </div>
+        </div>
+    </section>
+
+        <!-- Request to Join Section -->
+    <section class="section" id="join">
+        <div class="section-title">
+            <h2>Request to Join</h2>
+            <p>Want to become a member of Manase VSLA? Submit your request below</p>
+        </div>
+
+        <div style="max-width: 550px; margin: 0 auto; background: white; padding: 35px; border-radius: 16px; box-shadow: 0 4px 18px rgba(0,0,0,0.08);">
+            <form id="joinRequestForm">
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="join_full_name" required placeholder="Enter your full name">
+                </div>
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="text" id="join_phone" required placeholder="e.g. 0888123456">
+                </div>
+                <div class="form-group">
+                    <label>Village / Area</label>
+                    <input type="text" id="join_village" placeholder="Where do you live?">
+                </div>
+                <div class="form-group">
+                    <label>Why do you want to join?</label>
+                    <textarea id="join_reason" rows="3" placeholder="Optional message" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Submit Request</button>
+            </form>
+            <p id="joinMessage" class="error-message" style="margin-top: 15px;"></p>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="section" id="contact" style="background: #f8fafc;">
+        <div class="section-title">
+            <h2>Contact Us</h2>
+            <p>Get in touch with the Manase VSLA team</p>
+        </div>
+
+        <div class="contact-grid">
+            <div class="contact-card">
+                <i class="fas fa-map-marker-alt"></i>
+                <h3>Location</h3>
+                <p>Manase Community, <br>Blantyre, Malawi</p>
+            </div>
+            <div class="contact-card">
+                <i class="fas fa-phone"></i>
+                <h3>Phone</h3>
+                <p>+265 987 150 466</p>
+            </div>
+            <div class="contact-card">
+                <i class="fas fa-envelope"></i>
+                <h3>Email</h3>
+                <p>info@manasevsla.org</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <p><strong>Manase VSLA Management System</strong></p>
+        <p>Village Savings & Loan Association — Digital Platform</p>
+        <p style="margin-top: 12px; font-size: 13px;">&copy; 2026 Manase VSLA. All rights reserved.</p>
+    </footer>
+
+        <script>
+        function toggleFaq(element) {
+            const item = element.parentElement;
+            item.classList.toggle('open');
+        }
+
+        // Submit Join Request
+        document.getElementById('joinRequestForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const messageEl = document.getElementById('joinMessage');
+            messageEl.textContent = '';
+
+            const data = {
+                full_name: document.getElementById('join_full_name').value.trim(),
+                phone: document.getElementById('join_phone').value.trim(),
+                village: document.getElementById('join_village').value.trim(),
+                reason: document.getElementById('join_reason').value.trim()
+            };
+
+            try {
+                const response = await fetch('http://localhost:5000/api/join-requests/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to submit request');
+                }
+
+                messageEl.style.color = 'green';
+                messageEl.textContent = result.message;
+                document.getElementById('joinRequestForm').reset();
+            } catch (error) {
+                messageEl.style.color = 'red';
+                messageEl.textContent = error.message || 'Something went wrong. Please try again.';
+            }
+        });
+    </script>
+</body>
+</html>

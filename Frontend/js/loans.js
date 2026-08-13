@@ -36,14 +36,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Modal elements
     const applyModal = document.getElementById('applyLoanModal');
     const repayModal = document.getElementById('repayModal');
+    const statementModal = document.getElementById('statementModal');
     const applyLoanBtn = document.getElementById('applyLoanBtn');
     const closeApplyModal = document.getElementById('closeApplyModal');
     const closeRepayModal = document.getElementById('closeRepayModal');
+    const closeStatementModal = document.getElementById('closeStatementModal');
     const applyLoanForm = document.getElementById('applyLoanForm');
     const repayForm = document.getElementById('repayForm');
     const applyFormMessage = document.getElementById('applyFormMessage');
     const repayFormMessage = document.getElementById('repayFormMessage');
     const memberSelect = document.getElementById('loan_member_id');
+    const loanLimitInfo = document.getElementById('loanLimitInfo');
 
     // Open Apply Loan Modal
     applyLoanBtn.addEventListener('click', async () => {
@@ -51,6 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         applyFormMessage.textContent = '';
         applyLoanForm.reset();
         document.getElementById('loan_interest').value = 10;
+        loanLimitInfo.style.display = 'none';
 
         try {
             const members = await apiRequest('/members');
@@ -66,13 +70,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // When member is selected → show max loan allowed
+    memberSelect.addEventListener('change', async () => {
+        const memberId = memberSelect.value;
+
+        if (!memberId) {
+            loanLimitInfo.style.display = 'none';
+            return;
+        }
+
+        try {
+            const summary = await apiRequest(`/reports/member/${memberId}`);
+            const totalSavings = parseFloat(summary.total_savings || 0);
+            const maxLoan = totalSavings * 3;
+
+            document.getElementById('memberSavingsDisplay').textContent = `MWK ${totalSavings.toLocaleString()}`;
+            document.getElementById('maxLoanDisplay').textContent = `MWK ${maxLoan.toLocaleString()}`;
+            loanLimitInfo.style.display = 'block';
+        } catch (error) {
+            loanLimitInfo.style.display = 'none';
+        }
+    });
+
     // Close modals
     closeApplyModal.addEventListener('click', () => applyModal.style.display = 'none');
     closeRepayModal.addEventListener('click', () => repayModal.style.display = 'none');
+    if (closeStatementModal) {
+        closeStatementModal.addEventListener('click', () => statementModal.style.display = 'none');
+    }
 
     window.addEventListener('click', (e) => {
         if (e.target === applyModal) applyModal.style.display = 'none';
         if (e.target === repayModal) repayModal.style.display = 'none';
+        if (e.target === statementModal) statementModal.style.display = 'none';
     });
 
     // Load loans
@@ -119,10 +149,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             // Load outstanding summary
-            const outstanding = await apiRequest('/loans/outstanding');
-            document.getElementById('activeLoansCount').textContent = outstanding.total_outstanding_loans || 0;
-            document.getElementById('outstandingAmount').textContent = 
-                `MWK ${Number(outstanding.total_outstanding_amount || 0).toLocaleString()}`;
+            try {
+                const outstanding = await apiRequest('/loans/outstanding');
+                document.getElementById('activeLoansCount').textContent = outstanding.total_outstanding_loans || 0;
+                document.getElementById('outstandingAmount').textContent = 
+                    `MWK ${Number(outstanding.total_outstanding_amount || 0).toLocaleString()}`;
+            } catch (e) {
+                // ignore if outstanding endpoint fails
+            }
 
         } catch (error) {
             document.getElementById('loansTableBody').innerHTML = `
@@ -146,12 +180,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             await apiRequest('/loans/apply', 'POST', loanData);
             applyFormMessage.style.color = 'green';
-            applyFormMessage.textContent = 'Loan application submitted!';
+            applyFormMessage.textContent = 'Loan application submitted successfully!';
 
             setTimeout(() => {
                 applyModal.style.display = 'none';
                 loadLoans();
-            }, 800);
+            }, 1000);
         } catch (error) {
             applyFormMessage.style.color = 'red';
             applyFormMessage.textContent = error.message || 'Failed to apply for loan';
@@ -175,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!confirm('Reject this loan?')) return;
         try {
             await apiRequest(`/loans/${id}/status`, 'PUT', { status: 'rejected' });
-            alert('Loan rejected');
+            alert('Loan rejected successfully');
             loadLoans();
         } catch (error) {
             alert('Error: ' + error.message);
@@ -206,7 +240,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const result = await apiRequest('/loans/repay', 'POST', repayData);
             repayFormMessage.style.color = 'green';
-            repayFormMessage.textContent = `Repayment recorded! Remaining: MWK ${Number(result.remaining).toLocaleString()}`;
+            repayFormMessage.textContent = `Repayment recorded! Remaining: MWK ${Number(result.remaining || 0).toLocaleString()}`;
 
             setTimeout(() => {
                 repayModal.style.display = 'none';
@@ -233,7 +267,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <p><strong>Interest (${loan.interest_rate}%):</strong> MWK ${Number(loan.interest_amount).toLocaleString()}</p>
                 <p><strong>Total Due:</strong> MWK ${Number(loan.total_due).toLocaleString()}</p>
                 <p><strong>Total Repaid:</strong> MWK ${Number(loan.total_repaid).toLocaleString()}</p>
-                <p><strong>Outstanding Balance:</strong> <span style="color: ${loan.outstanding_balance > 0 ? '#d93025' : '#0d904f'}; font-weight: 600;">MWK ${Number(loan.outstanding_balance).toLocaleString()}</span></p>
+                <p><strong>Outstanding Balance:</strong> 
+                    <span style="color: ${loan.outstanding_balance > 0 ? '#d93025' : '#0d904f'}; font-weight: 600;">
+                        MWK ${Number(loan.outstanding_balance).toLocaleString()}
+                    </span>
+                </p>
                 <p><strong>Status:</strong> ${loan.status}</p>
                 <p><strong>Due Date:</strong> ${loan.due_date ? new Date(loan.due_date).toLocaleDateString() : '-'}</p>
                 <hr style="margin: 12px 0; border: none; border-top: 1px solid #eee;">
@@ -251,31 +289,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             document.getElementById('statementContent').innerHTML = html;
-            document.getElementById('statementModal').style.display = 'block';
+            statementModal.style.display = 'block';
 
         } catch (error) {
             alert('Error loading statement: ' + error.message);
         }
     };
-    // Load data
-    loadLoans();
 
-    const closeStatementModal = document.getElementById('closeStatementModal');
-    const statementModal = document.getElementById('statementModal');
-
-    if (closeStatementModal) {
-        closeStatementModal.addEventListener('click', () => {
-            statementModal.style.display = 'none';
-        });
-    }
-
-    window.addEventListener('click', (e) => {
-        if (e.target === statementModal) {
-            statementModal.style.display = 'none';
-        }
-    });
-
-        const printStatementBtn = document.getElementById('printStatementBtn');
+    // Print Statement
+    const printStatementBtn = document.getElementById('printStatementBtn');
     if (printStatementBtn) {
         printStatementBtn.addEventListener('click', () => {
             const content = document.getElementById('statementContent').innerHTML;
@@ -303,4 +325,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             printWindow.print();
         });
     }
+
+    // Load data
+    loadLoans();
 });

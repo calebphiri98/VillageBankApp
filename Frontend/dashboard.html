@@ -6,10 +6,50 @@
     <title>Dashboard - Manase VSLA</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .chart-card {
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+        }
+        .chart-card h3 {
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .chart-container {
+            position: relative;
+            height: 230px;
+        }
+        .performance-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 0 15px 20px;
+        }
+        .topbar .logout-link {
+            margin-left: 15px;
+            color: #d93025;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        @media (max-width: 768px) {
+            .performance-grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
             <h2><i class="fas fa-landmark"></i> Manase VSLA</h2>
@@ -17,29 +57,108 @@
         <ul class="nav-links">
             <li class="active"><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
             <li><a href="members.html"><i class="fas fa-users"></i> Members</a></li>
+            <li><a href="join-requests.html"><i class="fas fa-user-plus"></i> Join Requests</a></li>
             <li><a href="savings.html"><i class="fas fa-piggy-bank"></i> Savings</a></li>
             <li><a href="loans.html"><i class="fas fa-hand-holding-usd"></i> Loans</a></li>
             <li><a href="welfare.html"><i class="fas fa-heartbeat"></i> Welfare</a></li>
             <li><a href="fines.html"><i class="fas fa-exclamation-circle"></i> Fines</a></li>
             <li><a href="meetings.html"><i class="fas fa-calendar-alt"></i> Meetings</a></li>
-            <li><a href="reports.html"><i class="fas fa-chart-bar"></i> Reports</a></li>
             <li><a href="shareout.html"><i class="fas fa-share-alt"></i> Share-Out</a></li>
-            <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <header class="topbar">
             <button class="menu-toggle" id="menuToggle">☰</button>
             <h1><i class="fas fa-home"></i> Dashboard</h1>
             <div class="user-info">
                 Welcome, <span id="userName">User</span>
+                <a href="#" id="logoutBtn" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </header>
 
-        <div class="dashboard-cards" id="dashboardCards">
+        <!-- Summary Cards -->
+        <div class="dashboard-cards" id="dashboardCards" style="margin-bottom: 25px;">
             <p>Loading dashboard data...</p>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Financial Overview</h3>
+                <div class="chart-container"><canvas id="financialChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Loan Status</h3>
+                <div class="chart-container"><canvas id="loanStatusChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Savings vs Loans</h3>
+                <div class="chart-container"><canvas id="savingsLoansChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Member Status</h3>
+                <div class="chart-container"><canvas id="memberStatusChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Performance Summary -->
+        <div class="table-container" style="margin-bottom: 25px;">
+            <h2 style="padding: 18px 18px 8px; font-size: 18px; color: #333;">
+                <i class="fas fa-trophy" style="color: #1a73e8;"></i> Performance Summary
+            </h2>
+            <div class="dashboard-cards" id="performanceCards" style="padding: 0 18px 15px;"></div>
+            <div class="performance-grid">
+                <div>
+                    <h3 style="margin-bottom: 10px; font-size: 15px;">Top Savers</h3>
+                    <table>
+                        <thead><tr><th>#</th><th>Member</th><th>Total Savings</th></tr></thead>
+                        <tbody id="topSaversBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+                <div>
+                    <h3 style="margin-bottom: 10px; font-size: 15px;">Outstanding Loans</h3>
+                    <table>
+                        <thead><tr><th>Member</th><th>Outstanding</th><th>Status</th></tr></thead>
+                        <tbody id="outstandingLoansBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Member Financial Summary -->
+        <div class="table-container" style="margin-bottom: 25px;">
+            <h2 style="padding: 18px 18px 8px; font-size: 18px; color: #333;">
+                <i class="fas fa-user-circle" style="color: #1a73e8;"></i> Member Financial Summary
+            </h2>
+            <div style="padding: 0 18px 15px;">
+                <select id="memberSelect" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; min-width: 260px;">
+                    <option value="">Select a member</option>
+                </select>
+            </div>
+            <div id="memberSummary" style="padding: 0 18px 20px;">
+                <p style="color: #666;">Select a member to view their financial summary.</p>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="table-container">
+            <h2 style="padding: 18px 18px 10px; font-size: 18px; color: #333;">
+                <i class="fas fa-history" style="color: #1a73e8;"></i> Recent Activity
+            </h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Details</th>
+                        <th>Performed By</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="activityTableBody">
+                    <tr><td colspan="4">Loading activity...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 

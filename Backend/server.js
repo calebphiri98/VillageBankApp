@@ -15,6 +15,7 @@ const meetingRoutes = require('./routes/meetingRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const smsRoutes = require('./routes/smsRoutes');
 const auditRoutes = require('./routes/auditRoutes');
+const joinRequestRoutes = require('./routes/joinRequestRoutes');
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use('/api/meetings', meetingRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/sms', smsRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/join-requests', joinRequestRoutes);
 
 // Test Routes
 app.get('/', (req, res) => {

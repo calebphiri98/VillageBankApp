@@ -166,7 +166,28 @@ document.addEventListener('DOMContentLoaded', async () => {
             alert('Error: ' + error.message);
         }
     };
+        // If coming from an approved join request, open Add Member form pre-filled
+    const pendingMember = localStorage.getItem('pendingNewMember');
+    if (pendingMember) {
+        try {
+            const data = JSON.parse(pendingMember);
+            localStorage.removeItem('pendingNewMember');
 
+            // Open the Add Member modal
+            addModal.style.display = 'block';
+            formMessage.textContent = '';
+            addMemberForm.reset();
+
+            // Pre-fill name and phone
+            document.getElementById('full_name').value = data.full_name || '';
+            document.getElementById('phone').value = data.phone || '';
+
+            // Focus on membership number so committee can type it
+            document.getElementById('membership_number').focus();
+        } catch (e) {
+            localStorage.removeItem('pendingNewMember');
+        }
+    }
     
 
     // Load data

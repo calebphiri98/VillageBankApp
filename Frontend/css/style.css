@@ -432,3 +432,11 @@ td {
         font-size: 18px;
     }
 }
+
+.topbar .logout-link {
+    margin-left: 15px;
+    color: #d93025;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+}

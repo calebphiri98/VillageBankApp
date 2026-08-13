@@ -9,7 +9,6 @@
 </head>
 <body>
 
-    <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
             <h2><i class="fas fa-landmark"></i> Manase VSLA</h2>
@@ -17,24 +16,24 @@
         <ul class="nav-links">
             <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
             <li><a href="members.html"><i class="fas fa-users"></i> Members</a></li>
+            <li><a href="join-requests.html"><i class="fas fa-user-plus"></i> Join Requests</a></li>
             <li><a href="savings.html"><i class="fas fa-piggy-bank"></i> Savings</a></li>
             <li class="active"><a href="loans.html"><i class="fas fa-hand-holding-usd"></i> Loans</a></li>
             <li><a href="welfare.html"><i class="fas fa-heartbeat"></i> Welfare</a></li>
             <li><a href="fines.html"><i class="fas fa-exclamation-circle"></i> Fines</a></li>
             <li><a href="meetings.html"><i class="fas fa-calendar-alt"></i> Meetings</a></li>
-            <li><a href="reports.html"><i class="fas fa-chart-bar"></i> Reports</a></li>
             <li><a href="shareout.html"><i class="fas fa-share-alt"></i> Share-Out</a></li>
-            <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+           
         </ul>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <header class="topbar">
             <button class="menu-toggle" id="menuToggle">☰</button>
             <h1><i class="fas fa-hand-holding-usd"></i> Loans</h1>
             <div class="user-info">
-                Welcome, <span id="userName">User</span>
+               Welcome, <span id="userName">User</span>
+            <a href="#" id="logoutBtn" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </header>
 
@@ -42,7 +41,6 @@
             <button class="btn-primary" id="applyLoanBtn">+ Apply for Loan</button>
         </div>
 
-        <!-- Summary Cards -->
         <div class="dashboard-cards" style="margin-bottom: 25px;">
             <div class="card">
                 <h3>Active Loans</h3>
@@ -89,6 +87,15 @@
                         <option value="">Select Member</option>
                     </select>
                 </div>
+
+                <!-- Maximum Loan Info -->
+                <div class="form-group" id="loanLimitInfo" style="display: none; background: #e8f0fe; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                    <p style="margin: 0; font-size: 14px;">
+                        <strong>Member Savings:</strong> <span id="memberSavingsDisplay">MWK 0</span><br>
+                        <strong>Maximum Loan Allowed:</strong> <span id="maxLoanDisplay" style="color: #1a73e8;">MWK 0</span>
+                    </p>
+                </div>
+
                 <div class="form-group">
                     <label>Amount (MWK)</label>
                     <input type="number" id="loan_amount" required min="1" placeholder="Enter loan amount">
@@ -128,14 +135,12 @@
         </div>
     </div>
 
-        <!-- Loan Statement Modal -->
+    <!-- Loan Statement Modal -->
     <div id="statementModal" class="modal">
         <div class="modal-content" style="max-width: 600px;">
             <span class="close-btn" id="closeStatementModal">&times;</span>
             <h2>Loan Statement</h2>
-            <div id="statementContent" style="margin-top: 20px; line-height: 1.7; font-size: 15px;">
-                <!-- Statement will be inserted here -->
-            </div>
+            <div id="statementContent" style="margin-top: 20px; line-height: 1.7; font-size: 15px;"></div>
             <div style="margin-top: 25px; text-align: right;">
                 <button class="btn-primary" id="printStatementBtn" style="width: auto; padding: 10px 20px;">Print / Save as PDF</button>
             </div>

@@ -3,15 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manase VSLA - Login</title>
+    <title>Login - Manase VSLA</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                linear-gradient(135deg, rgba(26,115,232,0.88), rgba(13,71,161,0.92)),
+                url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1600&q=80')
+                center/cover no-repeat;
+            padding: 20px;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px 32px;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .login-box .logo-icon {
+            font-size: 42px;
+            color: #1a73e8;
+            margin-bottom: 10px;
+        }
+
+        .login-box h1 {
+            color: #1a73e8;
+            font-size: 26px;
+            margin-bottom: 6px;
+        }
+
+        .login-box .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
+
+        .login-box .form-group {
+            text-align: left;
+            margin-bottom: 18px;
+        }
+
+        .login-box label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        .login-box input:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+
+        .login-box .btn-primary {
+            width: 100%;
+            padding: 13px;
+            margin-top: 8px;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .error-message {
+            color: #d93025;
+            margin-top: 14px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        .back-home {
+            display: inline-block;
+            margin-top: 18px;
+            color: #1a73e8;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .back-home:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body class="login-page">
 
-    <div class="login-container">
+    <div class="login-wrapper">
         <div class="login-box">
-            <h1><i class="fas fa-landmark"></i> Manase VSLA</h1>
+            <div class="logo-icon">
+                <i class="fas fa-landmark"></i>
+            </div>
+            <h1>Manase VSLA</h1>
             <p class="subtitle">Village Savings & Loan Association</p>
 
             <form id="loginForm">
@@ -25,10 +126,16 @@
                     <input type="password" id="password" placeholder="Enter password" required>
                 </div>
 
-                <button type="submit" class="btn-primary">Login</button>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
             </form>
 
             <p id="errorMessage" class="error-message"></p>
+
+            <a href="home.html" class="back-home">
+                <i class="fas fa-arrow-left"></i> Back to Home
+            </a>
         </div>
     </div>
 
