@@ -16,7 +16,7 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    background: linear-gradient(135deg, #1b7a4e, #145c3b);
 }
 
 .login-container {
@@ -31,11 +31,11 @@ body {
     border-radius: 12px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     text-align: center;
-    border-top: 5px solid #1a73e8;
+    border-top: 5px solid #1b7a4e;
 }
 
 .login-box h1 {
-    color: #1a73e8;
+    color: #1b7a4e;
     margin-bottom: 5px;
     font-size: 28px;
 }
@@ -73,13 +73,13 @@ body {
 
 .form-group input:focus {
     outline: none;
-    border-color: #1a73e8;
+    border-color: #1b7a4e;
 }
 
 .btn-primary {
     width: 100%;
     padding: 13px;
-    background-color: #1a73e8;
+    background-color: #1b7a4e;
     color: white;
     border: none;
     border-radius: 8px;
@@ -90,9 +90,9 @@ body {
 }
 
 .btn-primary:hover {
-    background-color: #1557b0;
+    background-color: #145c3b;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+    box-shadow: 0 4px 12px rgba(27, 122, 78, 0.3);
 }
 
 .error-message {
@@ -106,7 +106,7 @@ body {
 .sidebar {
     width: 250px;
     height: 100vh;
-    background: linear-gradient(180deg, #1a73e8 0%, #0d47a1 100%);
+    background: linear-gradient(180deg, #1b7a4e 0%, #145c3b 100%);
     color: white;
     position: fixed;
     left: 0;
@@ -114,6 +114,7 @@ body {
     padding-top: 20px;
     z-index: 100;
     box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+    overflow-y: auto;
 }
 
 .sidebar-header {
@@ -165,7 +166,7 @@ body {
 }
 
 .nav-links li.active {
-    border-left: 4px solid white;
+    border-left: 4px solid #c9a227;
 }
 
 /* ========== MAIN CONTENT ========== */
@@ -194,6 +195,14 @@ body {
     color: #555;
 }
 
+.topbar .logout-link {
+    margin-left: 15px;
+    color: #d93025;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+}
+
 /* ========== CARDS ========== */
 .dashboard-cards {
     display: grid;
@@ -207,7 +216,7 @@ body {
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     text-align: center;
-    border-top: 4px solid #1a73e8;
+    border-top: 4px solid #1b7a4e;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -230,7 +239,7 @@ body {
 .card .value {
     font-size: 28px;
     font-weight: 700;
-    color: #1a73e8;
+    color: #1b7a4e;
 }
 
 /* ========== TABLES ========== */
@@ -297,7 +306,7 @@ td {
 }
 
 .btn-edit {
-    background-color: #1a73e8;
+    background-color: #1b7a4e;
     color: white;
 }
 
@@ -343,7 +352,7 @@ td {
 
 .modal-content h2 {
     margin-bottom: 20px;
-    color: #1a73e8;
+    color: #1b7a4e;
 }
 
 .modal-content .form-group {
@@ -367,12 +376,19 @@ td {
     font-size: 15px;
 }
 
+.modal-content input:focus,
+.modal-content select:focus,
+.modal-content textarea:focus {
+    outline: none;
+    border-color: #1b7a4e;
+}
+
 /* ========== MOBILE RESPONSIVE ========== */
 .menu-toggle {
     display: none;
     background: none;
     border: none;
-    color: #1a73e8;
+    color: #1b7a4e;
     font-size: 28px;
     cursor: pointer;
     margin-right: 15px;
@@ -431,12 +447,4 @@ td {
     .sidebar-header h2 {
         font-size: 18px;
     }
-}
-
-.topbar .logout-link {
-    margin-left: 15px;
-    color: #d93025;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 14px;
 }

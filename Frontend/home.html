@@ -9,7 +9,7 @@
     <style>
         /* ===== LANDING PAGE STYLES ===== */
         .landing-nav {
-            background: #1a73e8;
+            background: #1b7a4e;
             color: white;
             padding: 15px 40px;
             display: flex;
@@ -50,27 +50,27 @@
         }
 
         .nav-login-btn {
-            background: white;
-            color: #1a73e8 !important;
+            background: #c9a227;
+            color: #1a1a1a !important;
             padding: 8px 20px;
             border-radius: 8px;
             font-weight: 600 !important;
         }
 
-        /* Hero */
-                .hero {
-            background:
-                linear-gradient(135deg, rgba(26,115,232,0.90), rgba(13,71,161,0.93)),
-                url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1600&q=80')
-                center/cover no-repeat;
-            color: white;
-            padding: 90px 40px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 40px;
-            flex-wrap: wrap;
-        }
+        /* Hero - image more visible */
+        .hero {
+    background:
+        linear-gradient(135deg, rgba(27,122,78,0.55), rgba(20,92,59,0.60)),
+        url('https://images.unsplash.com/photo-1573164713714-d95e436aa8b4?auto=format&fit=crop&w=1600&q=80')
+        center/cover no-repeat;
+    color: white;
+    padding: 90px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+    flex-wrap: wrap;
+}
 
         .hero-text {
             flex: 1;
@@ -112,8 +112,8 @@
         }
 
         .btn-hero-primary {
-            background: white;
-            color: #1a73e8;
+            background: #c9a227;
+            color: #1a1a1a;
         }
 
         .btn-hero-secondary {
@@ -132,9 +132,9 @@
         }
 
         .money-card {
-            background: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.18);
             backdrop-filter: blur(8px);
-            border: 1px solid rgba(255,255,255,0.25);
+            border: 1px solid rgba(255,255,255,0.28);
             border-radius: 16px;
             padding: 25px 20px;
             text-align: center;
@@ -144,6 +144,7 @@
         .money-card i {
             font-size: 36px;
             margin-bottom: 12px;
+            color: #c9a227;
         }
 
         .money-card h3 {
@@ -170,7 +171,7 @@
 
         .section-title h2 {
             font-size: 32px;
-            color: #1a73e8;
+            color: #1b7a4e;
             margin-bottom: 10px;
         }
 
@@ -202,7 +203,7 @@
 
         .feature-card i {
             font-size: 40px;
-            color: #1a73e8;
+            color: #1b7a4e;
             margin-bottom: 15px;
         }
 
@@ -220,7 +221,7 @@
 
         /* About */
         .about-box {
-            background: #f0f7ff;
+            background: #eef8f1;
             border-radius: 16px;
             padding: 40px;
             display: grid;
@@ -230,7 +231,7 @@
         }
 
         .about-box h3 {
-            color: #1a73e8;
+            color: #1b7a4e;
             font-size: 24px;
             margin-bottom: 15px;
         }
@@ -257,13 +258,13 @@
 
         .stat-item i {
             font-size: 28px;
-            color: #1a73e8;
+            color: #1b7a4e;
             margin-bottom: 8px;
         }
 
         .stat-item h4 {
             font-size: 22px;
-            color: #1a73e8;
+            color: #1b7a4e;
             margin-bottom: 4px;
         }
 
@@ -328,7 +329,7 @@
 
         .contact-card i {
             font-size: 36px;
-            color: #1a73e8;
+            color: #1b7a4e;
             margin-bottom: 12px;
         }
 
@@ -344,7 +345,7 @@
 
         /* Footer */
         .landing-footer {
-            background: #0d47a1;
+            background: #145c3b;
             color: white;
             text-align: center;
             padding: 30px 20px;
@@ -375,7 +376,6 @@
                 padding: 50px 20px;
                 text-align: center;
             }
-            
 
             .hero-text h1 {
                 font-size: 30px;
@@ -401,8 +401,9 @@
     <!-- Navigation -->
     <nav class="landing-nav">
         <div class="logo">
-            <i class="fas fa-landmark"></i> Manase VSLA
-        </div>
+        <img src="images/logo.png" alt="Manase VSLA Logo" style="height: 42px; width: auto; border-radius: 6px;">
+        <span>Manase VSLA</span>
+      </div>
         <ul>
             <li><a href="#about">About</a></li>
             <li><a href="#features">Features</a></li>
@@ -602,7 +603,7 @@
         </div>
     </section>
 
-        <!-- Request to Join Section -->
+    <!-- Request to Join Section -->
     <section class="section" id="join">
         <div class="section-title">
             <h2>Request to Join</h2>
@@ -644,7 +645,7 @@
             <div class="contact-card">
                 <i class="fas fa-map-marker-alt"></i>
                 <h3>Location</h3>
-                <p>Manase Community, <br>Blantyre, Malawi</p>
+                <p>Manase Community,<br>Blantyre, Malawi</p>
             </div>
             <div class="contact-card">
                 <i class="fas fa-phone"></i>
@@ -666,13 +667,12 @@
         <p style="margin-top: 12px; font-size: 13px;">&copy; 2026 Manase VSLA. All rights reserved.</p>
     </footer>
 
-        <script>
+    <script>
         function toggleFaq(element) {
             const item = element.parentElement;
             item.classList.toggle('open');
         }
 
-        // Submit Join Request
         document.getElementById('joinRequestForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const messageEl = document.getElementById('joinMessage');
