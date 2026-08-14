@@ -52,4 +52,55 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+// Forgot Password - reset using username + phone
+const forgotPassword = async (req, res) => {
+    const { username, phone, new_password } = req.body;
+
+    try {
+        if (!username || !phone || !new_password) {
+            return res.status(400).json({
+                message: 'Username, phone number, and new password are required'
+            });
+        }
+
+        if (new_password.length < 6) {
+            return res.status(400).json({
+                message: 'Password must be at least 6 characters'
+            });
+        }
+
+        // Find user by username and phone
+        const [users] = await db.query(
+            `SELECT id FROM users WHERE username = ? AND phone = ?`,
+            [username, phone]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({
+                message: 'No account found with that username and phone number'
+            });
+        }
+
+        // Hash new password
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+
+        await db.query(
+            `UPDATE users SET password = ? WHERE id = ?`,
+            [hashedPassword, users[0].id]
+        );
+
+        res.json({ message: 'Password reset successfully. You can now login.' });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error resetting password',
+            error: error.message
+        });
+    }
+};
+
+module.exports = {
+    register,
+    login,
+    forgotPassword
+};

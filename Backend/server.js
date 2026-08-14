@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const db = require('./config/db');
 
+
 const authRoutes = require('./routes/authRoutes');
 const memberRoutes = require('./routes/memberRoutes');
 const savingsRoutes = require('./routes/savingsRoutes');
@@ -40,6 +41,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/sms', smsRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/join-requests', joinRequestRoutes);
+
 
 // Test Routes
 app.get('/', (req, res) => {
