@@ -13,13 +13,12 @@ function formatPhone(phone) {
 }
 
 // Send SMS via Brevo
-async function sendSMS(phone, message, sent_by = null) {
+async function sendSMS(phone, message) {
     const recipient = formatPhone(phone);
     const sender = process.env.BREVO_SENDER || 'ManaseVSLA';
     const apiKey = process.env.BREVO_API_KEY;
 
     let status = 'failed';
-    let errorMessage = null;
     let providerResponse = null;
 
     try {
@@ -53,12 +52,11 @@ async function sendSMS(phone, message, sent_by = null) {
             status = 'sent';
         } else {
             status = 'failed';
-            errorMessage = result.message || JSON.stringify(result);
             console.error('Brevo SMS Error:', result);
         }
     } catch (error) {
         status = 'failed';
-        errorMessage = error.message;
+        providerResponse = { error: error.message };
         console.error('SMS Service Error:', error.message);
     }
 
@@ -72,9 +70,8 @@ async function sendSMS(phone, message, sent_by = null) {
 
         return {
             success: status === 'sent',
-            messageId: insertResult.insertId,
+            smsId: insertResult.insertId,
             status,
-            error: errorMessage,
             providerResponse
         };
     } catch (dbError) {
@@ -82,7 +79,6 @@ async function sendSMS(phone, message, sent_by = null) {
         return {
             success: status === 'sent',
             status,
-            error: errorMessage || dbError.message,
             providerResponse
         };
     }

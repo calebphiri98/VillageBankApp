@@ -14,14 +14,20 @@ const sendTestSMS = async (req, res) => {
 
         if (result.success) {
             res.json({
-                message: 'SMS sent successfully (simulated)',
+                message: 'SMS sent successfully',
                 smsId: result.messageId
             });
         } else {
-            res.status(500).json({ message: 'Failed to send SMS', error: result.error });
+            res.status(500).json({
+                message: 'Failed to send SMS',
+                error: result.error
+            });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Error sending SMS', error: error.message });
+        res.status(500).json({
+            message: 'Error sending SMS',
+            error: error.message
+        });
     }
 };
 
@@ -37,7 +43,10 @@ const getSMSHistory = async (req, res) => {
         `);
         res.json(messages);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching SMS history', error: error.message });
+        res.status(500).json({
+            message: 'Error fetching SMS history',
+            error: error.message
+        });
     }
 };
 

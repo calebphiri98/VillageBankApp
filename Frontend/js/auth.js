@@ -2,9 +2,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const errorMessage = document.getElementById('errorMessage');
 
-    // If already logged in, redirect to dashboard
+    // If already logged in, redirect based on role
     if (localStorage.getItem('token')) {
-        window.location.href = 'dashboard.html';
+        const existingUser = JSON.parse(localStorage.getItem('user') || '{}');
+        if (existingUser.role === 'member') {
+            window.location.href = 'profile.html';
+        } else {
+            window.location.href = 'dashboard.html';
+        }
     }
 
     loginForm.addEventListener('submit', async (e) => {
@@ -25,12 +30,15 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
 
-            // Redirect to dashboard
-            window.location.href = 'dashboard.html';
+            // Redirect based on role
+            if (data.user.role === 'member') {
+                window.location.href = 'profile.html';
+            } else {
+                window.location.href = 'dashboard.html';
+            }
 
         } catch (error) {
             errorMessage.textContent = error.message || 'Login failed. Please try again.';
         }
     });
 });
-
