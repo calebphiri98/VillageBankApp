@@ -4,7 +4,6 @@ const dotenv = require('dotenv');
 const db = require('./config/db');
 const path = require('path');
 
-
 const authRoutes = require('./routes/authRoutes');
 const memberRoutes = require('./routes/memberRoutes');
 const savingsRoutes = require('./routes/savingsRoutes');
@@ -26,11 +25,14 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Routes
+// Serve frontend website (do not auto-open index.html)
+app.use(express.static(path.join(__dirname, '../Frontend'), { index: false }));
+
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/savings', savingsRoutes);
@@ -46,12 +48,12 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/join-requests', joinRequestRoutes);
 app.use('/api/profile', profileRoutes);
 
-
-// Test Routes
+// Website homepage
 app.get('/', (req, res) => {
-    res.send('✅ VSLA Manase Backend is Running!');
+    res.sendFile(path.join(__dirname, '../Frontend/home.html'));
 });
 
+// Test DB
 app.get('/test-db', async (req, res) => {
     try {
         const [rows] = await db.query('SELECT 1 as connection_test');

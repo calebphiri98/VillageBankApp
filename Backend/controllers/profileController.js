@@ -7,10 +7,10 @@ const getMyProfile = async (req, res) => {
     try {
         const userId = req.user.id;
 
-        // Get member linked to this user
         const [members] = await db.query(`
             SELECT m.id, m.membership_number, m.date_joined, m.status,
-                   u.full_name, u.phone, u.username, u.role
+                   u.full_name, u.phone, u.username, u.role,
+                   u.marital_status, u.address, u.village, u.gender, u.date_of_birth
             FROM members m
             JOIN users u ON m.user_id = u.id
             WHERE m.user_id = ?
@@ -87,20 +87,44 @@ const getMyProfile = async (req, res) => {
     }
 };
 
-// Update own phone number
-const updateMyPhone = async (req, res) => {
+// Update own profile information
+const updateMyProfile = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { phone } = req.body;
+        const {
+            phone,
+            marital_status,
+            address,
+            village,
+            gender,
+            date_of_birth,
+            full_name
+        } = req.body;
 
-        if (!phone) {
-            return res.status(400).json({ message: 'Phone number is required' });
-        }
+        await db.query(`
+            UPDATE users
+            SET phone = COALESCE(?, phone),
+                marital_status = COALESCE(?, marital_status),
+                address = COALESCE(?, address),
+                village = COALESCE(?, village),
+                gender = COALESCE(?, gender),
+                date_of_birth = COALESCE(?, date_of_birth),
+                full_name = COALESCE(?, full_name)
+            WHERE id = ?
+        `, [
+            phone || null,
+            marital_status || null,
+            address || null,
+            village || null,
+            gender || null,
+            date_of_birth || null,
+            full_name || null,
+            userId
+        ]);
 
-        await db.query(`UPDATE users SET phone = ? WHERE id = ?`, [phone, userId]);
-        res.json({ message: 'Phone number updated successfully' });
+        res.json({ message: 'Profile updated successfully' });
     } catch (error) {
-        res.status(500).json({ message: 'Error updating phone', error: error.message });
+        res.status(500).json({ message: 'Error updating profile', error: error.message });
     }
 };
 
@@ -176,7 +200,7 @@ const deleteDocument = async (req, res) => {
 
 module.exports = {
     getMyProfile,
-    updateMyPhone,
+    updateMyProfile,
     uploadDocument,
     deleteDocument
 };

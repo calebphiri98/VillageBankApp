@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const {
     getMyProfile,
-    updateMyPhone,
+    updateMyProfile,
     uploadDocument,
     deleteDocument
 } = require('../controllers/profileController');
@@ -24,7 +24,10 @@ const storage = multer.diskStorage({
 const fileFilter = (req, file, cb) => {
     const allowed = /jpeg|jpg|png|pdf|doc|docx/;
     const ext = allowed.test(path.extname(file.originalname).toLowerCase());
-    const mime = allowed.test(file.mimetype) || file.mimetype === 'application/msword' || file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.mimetype === 'application/pdf';
+    const mime = allowed.test(file.mimetype) ||
+        file.mimetype === 'application/msword' ||
+        file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        file.mimetype === 'application/pdf';
 
     if (ext || mime) {
         cb(null, true);
@@ -40,7 +43,7 @@ const upload = multer({
 });
 
 router.get('/me', protect, getMyProfile);
-router.put('/phone', protect, updateMyPhone);
+router.put('/me', protect, updateMyProfile);
 router.post('/documents', protect, upload.single('document'), uploadDocument);
 router.delete('/documents/:id', protect, deleteDocument);
 
