@@ -32,42 +32,59 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentTotalSavings = parseFloat(data.total_savings || 0);
             const maxLoan = currentTotalSavings * 3;
 
+            // Summary cards
             document.getElementById('summaryCards').innerHTML = `
                 <div class="profile-card">
                     <h3>Total Savings</h3>
-                    <div class="value" style="font-size:26px;color:#1b7a4e;">MWK ${Number(data.total_savings).toLocaleString()}</div>
+                    <div class="value">MWK ${Number(data.total_savings).toLocaleString()}</div>
                 </div>
-                <div class="profile-card">
-                    <h3>Active / Total Loans</h3>
-                    <div class="value" style="font-size:26px;color:#1b7a4e;">${data.loans.filter(l => l.status === 'approved').length} / ${data.loans.length}</div>
+                <div class="profile-card gold">
+                    <h3>Active Loans</h3>
+                    <div class="value">${data.loans.filter(l => l.status === 'approved').length}</div>
                 </div>
                 <div class="profile-card">
                     <h3>Total Fines</h3>
-                    <div class="value" style="font-size:26px;color:#1b7a4e;">MWK ${Number(data.total_fines).toLocaleString()}</div>
+                    <div class="value">MWK ${Number(data.total_fines).toLocaleString()}</div>
                 </div>
-                <div class="profile-card">
+                <div class="profile-card gold">
                     <h3>Documents</h3>
-                    <div class="value" style="font-size:26px;color:#1b7a4e;">${data.documents.length}</div>
+                    <div class="value">${data.documents.length}</div>
                 </div>
             `;
 
+            // Loan limit
             document.getElementById('loanLimitBox').innerHTML = `
                 <strong>Your Savings:</strong> MWK ${currentTotalSavings.toLocaleString()}<br>
-                <strong>Maximum Loan Allowed:</strong> <span style="color:#1b7a4e;">MWK ${maxLoan.toLocaleString()}</span>
+                <strong>Maximum Loan Allowed:</strong> <span style="color:#c9a227;">MWK ${maxLoan.toLocaleString()}</span>
             `;
 
+            // Personal info display
             const m = data.member;
             document.getElementById('personalInfo').innerHTML = `
                 <div class="info-row"><span>Full Name</span><span>${m.full_name || '-'}</span></div>
                 <div class="info-row"><span>Username</span><span>${m.username || '-'}</span></div>
                 <div class="info-row"><span>Membership No.</span><span>${m.membership_number || '-'}</span></div>
                 <div class="info-row"><span>Phone</span><span>${m.phone || '-'}</span></div>
+                <div class="info-row"><span>Gender</span><span>${m.gender || '-'}</span></div>
+                <div class="info-row"><span>Marital Status</span><span>${m.marital_status || '-'}</span></div>
+                <div class="info-row"><span>Date of Birth</span><span>${m.date_of_birth ? new Date(m.date_of_birth).toLocaleDateString() : '-'}</span></div>
+                <div class="info-row"><span>Village</span><span>${m.village || '-'}</span></div>
+                <div class="info-row"><span>Address</span><span>${m.address || '-'}</span></div>
                 <div class="info-row"><span>Role</span><span>${m.role || '-'}</span></div>
                 <div class="info-row"><span>Status</span><span>${m.status || '-'}</span></div>
                 <div class="info-row"><span>Date Joined</span><span>${m.date_joined ? new Date(m.date_joined).toLocaleDateString() : '-'}</span></div>
             `;
-            document.getElementById('newPhone').value = m.phone || '';
 
+            // Fill edit form
+            document.getElementById('full_name').value = m.full_name || '';
+            document.getElementById('phone').value = m.phone || '';
+            document.getElementById('gender').value = m.gender || '';
+            document.getElementById('marital_status').value = m.marital_status || '';
+            document.getElementById('date_of_birth').value = m.date_of_birth ? m.date_of_birth.substring(0, 10) : '';
+            document.getElementById('village').value = m.village || '';
+            document.getElementById('address').value = m.address || '';
+
+            // Savings
             document.getElementById('savingsBody').innerHTML = data.savings.length
                 ? data.savings.map(s => `
                     <tr>
@@ -77,6 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 `).join('')
                 : `<tr><td colspan="2">No savings records</td></tr>`;
 
+            // Loans
             document.getElementById('loansBody').innerHTML = data.loans.length
                 ? data.loans.map(l => `
                     <tr>
@@ -86,13 +104,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <td>MWK ${Number(l.outstanding_balance).toLocaleString()}</td>
                         <td><strong>${l.status}</strong></td>
                         <td>${l.due_date ? new Date(l.due_date).toLocaleDateString() : '-'}</td>
-                        <td>
-                            <button class="btn-sm btn-edit" onclick="viewStatement(${l.id})">Statement</button>
-                        </td>
+                        <td><button class="btn-sm btn-edit" onclick="viewStatement(${l.id})">Statement</button></td>
                     </tr>
                 `).join('')
                 : `<tr><td colspan="7">No loans</td></tr>`;
 
+            // Fines
             document.getElementById('finesBody').innerHTML = data.fines.length
                 ? data.fines.map(f => `
                     <tr>
@@ -133,13 +150,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         `).join('');
     }
 
-    document.getElementById('updatePhoneBtn').addEventListener('click', async () => {
-        const phone = document.getElementById('newPhone').value.trim();
-        const msg = document.getElementById('phoneMessage');
+    // Update profile
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const msg = document.getElementById('profileMessage');
         msg.textContent = '';
 
+        const body = {
+            full_name: document.getElementById('full_name').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            gender: document.getElementById('gender').value,
+            marital_status: document.getElementById('marital_status').value,
+            date_of_birth: document.getElementById('date_of_birth').value || null,
+            village: document.getElementById('village').value.trim(),
+            address: document.getElementById('address').value.trim()
+        };
+
         try {
-            const result = await apiRequest('/profile/phone', 'PUT', { phone });
+            const result = await apiRequest('/profile/me', 'PUT', body);
             msg.style.color = 'green';
             msg.textContent = result.message;
             loadProfile();
@@ -149,6 +177,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // Request Loan
     document.getElementById('loanRequestForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const msg = document.getElementById('loanRequestMessage');
@@ -188,6 +217,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // Loan Statement
     window.viewStatement = async function(loanId) {
         try {
             const data = await apiRequest(`/loans/${loanId}/statement`);
@@ -247,6 +277,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.print();
     });
 
+    // Upload document
     document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const msg = document.getElementById('uploadMessage');
