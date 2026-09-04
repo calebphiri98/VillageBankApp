@@ -36,34 +36,85 @@ const getMemberById = async (req, res) => {
     }
 };
 
-// Create new member
+// Create new member with proper username + temporary password
 const createMember = async (req, res) => {
     const { membership_number, date_joined, full_name, phone, role = 'member' } = req.body;
 
     try {
-        // Create user first
-        const hashedPassword = await bcrypt.hash('default123', 10);
+        if (!membership_number || !full_name || !phone) {
+            return res.status(400).json({
+                message: 'Membership number, full name, and phone are required'
+            });
+        }
 
+        // Generate username from full name: "Grace Banda" -> "grace.banda"
+        let baseUsername = full_name
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9\s]/g, '')
+            .replace(/\s+/g, '.');
+
+        if (!baseUsername) {
+            baseUsername = 'member' + Date.now();
+        }
+
+        // Ensure username is unique
+        let username = baseUsername;
+        let counter = 2;
+        while (true) {
+            const [existing] = await db.query(
+                'SELECT id FROM users WHERE username = ?',
+                [username]
+            );
+            if (existing.length === 0) break;
+            username = `${baseUsername}${counter}`;
+            counter++;
+        }
+
+        // Temporary password
+        const tempPassword = 'Manase@123';
+        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+        // Create user account
         const [userResult] = await db.query(
-            'INSERT INTO users (username, password, role, full_name, phone) VALUES (?, ?, ?, ?, ?)',
-            [membership_number, hashedPassword, role, full_name, phone]
+            `INSERT INTO users (username, password, role, full_name, phone)
+             VALUES (?, ?, ?, ?, ?)`,
+            [username, hashedPassword, role, full_name, phone]
         );
 
-        // Create member
+        // Create member record
         const [memberResult] = await db.query(
-            'INSERT INTO members (user_id, membership_number, date_joined) VALUES (?, ?, ?)',
+            `INSERT INTO members (user_id, membership_number, date_joined, status)
+             VALUES (?, ?, ?, 'active')`,
             [userResult.insertId, membership_number, date_joined || new Date()]
         );
 
-        res.status(201).json({ 
-            message: 'Member created successfully', 
-            memberId: memberResult.insertId 
+        // Simulate / attempt SMS with login details
+        try {
+            const { sendSMS } = require('../utils/smsService');
+            const smsMessage =
+                `Welcome to Manase VSLA.\n` +
+                `Username: ${username}\n` +
+                `Temporary Password: ${tempPassword}\n` +
+                `Please login and change your password.\n` +
+                `- Manase VSLA`;
+
+            await sendSMS(phone, smsMessage);
+        } catch (smsError) {
+            console.error('SMS send failed (member still created):', smsError.message);
+        }
+
+        res.status(201).json({
+            message: 'Member created successfully',
+            memberId: memberResult.insertId,
+            username,
+            temporaryPassword: tempPassword,
+            note: 'Share these login details with the member. SMS also logged/simulated.'
         });
     } catch (error) {
         res.status(500).json({ message: 'Error creating member', error: error.message });
     }
 };
-
 
 // Update member
 const updateMember = async (req, res) => {
@@ -71,7 +122,6 @@ const updateMember = async (req, res) => {
     const memberId = req.params.id;
 
     try {
-        // Update the linked user (including role)
         await db.query(
             `UPDATE users u 
              JOIN members m ON u.id = m.user_id 
@@ -80,7 +130,6 @@ const updateMember = async (req, res) => {
             [full_name, phone, role, memberId]
         );
 
-        // Update the member record
         await db.query(
             `UPDATE members 
              SET status = ?, date_joined = ? 
@@ -93,7 +142,8 @@ const updateMember = async (req, res) => {
         res.status(500).json({ message: 'Error updating member', error: error.message });
     }
 };
-// Delete member (soft delete)
+
+// Delete member (soft delete / deactivate)
 const deleteMember = async (req, res) => {
     const memberId = req.params.id;
 

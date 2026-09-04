@@ -92,6 +92,27 @@
             font-weight: 600;
             font-size: 14px;
         }
+        .password-wrap {
+            position: relative;
+        }
+        .password-wrap input {
+            width: 100%;
+            padding-right: 42px;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #666;
+            font-size: 15px;
+        }
+        .toggle-password:hover {
+            color: #1b7a4e;
+        }
         @media (max-width: 768px) {
             .form-grid { grid-template-columns: 1fr; }
         }
@@ -178,6 +199,44 @@
                     Save Changes
                 </button>
                 <p id="profileMessage" class="error-message"></p>
+            </form>
+        </div>
+
+        <!-- Change Password -->
+        <div class="section-box">
+            <h2><i class="fas fa-key"></i> Change Password</h2>
+            <form id="changePasswordForm" style="max-width: 420px;">
+                <div class="form-group">
+                    <label>Current Password</label>
+                    <div class="password-wrap">
+                        <input type="password" id="current_password" required>
+                        <button type="button" class="toggle-password" data-target="current_password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>New Password</label>
+                    <div class="password-wrap">
+                        <input type="password" id="new_password" required minlength="6">
+                        <button type="button" class="toggle-password" data-target="new_password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Confirm New Password</label>
+                    <div class="password-wrap">
+                        <input type="password" id="confirm_new_password" required minlength="6">
+                        <button type="button" class="toggle-password" data-target="confirm_new_password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" style="width:auto; padding:10px 18px;">
+                    Change Password
+                </button>
+                <p id="passwordMessage" class="error-message"></p>
             </form>
         </div>
 

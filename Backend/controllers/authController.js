@@ -69,7 +69,6 @@ const forgotPassword = async (req, res) => {
             });
         }
 
-        // Find user by username and phone
         const [users] = await db.query(
             `SELECT id FROM users WHERE username = ? AND phone = ?`,
             [username, phone]
@@ -81,8 +80,6 @@ const forgotPassword = async (req, res) => {
             });
         }
 
-        // Hash new password
-        const bcrypt = require('bcryptjs');
         const hashedPassword = await bcrypt.hash(new_password, 10);
 
         await db.query(
@@ -99,8 +96,56 @@ const forgotPassword = async (req, res) => {
     }
 };
 
+// Change password (logged-in user)
+const changePassword = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { current_password, new_password } = req.body;
+
+        if (!current_password || !new_password) {
+            return res.status(400).json({
+                message: 'Current password and new password are required'
+            });
+        }
+
+        if (new_password.length < 6) {
+            return res.status(400).json({
+                message: 'New password must be at least 6 characters'
+            });
+        }
+
+        const [users] = await db.query(
+            'SELECT id, password FROM users WHERE id = ?',
+            [userId]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const isMatch = await bcrypt.compare(current_password, users[0].password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+        await db.query(
+            'UPDATE users SET password = ? WHERE id = ?',
+            [hashedPassword, userId]
+        );
+
+        res.json({ message: 'Password changed successfully' });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error changing password',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     register,
     login,
-    forgotPassword
+    forgotPassword,
+    changePassword
 };

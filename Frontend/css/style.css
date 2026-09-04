@@ -31,7 +31,7 @@ body {
     border-radius: 12px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     text-align: center;
-    border-top: 5px solid #1b7a4e;
+    border-top: 5px solid #c9a227;
 }
 
 .login-box h1 {
@@ -62,7 +62,9 @@ body {
     font-size: 14px;
 }
 
-.form-group input {
+.form-group input,
+.form-group select,
+.form-group textarea {
     width: 100%;
     padding: 12px 14px;
     border: 1px solid #ddd;
@@ -71,7 +73,9 @@ body {
     transition: border-color 0.3s;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
     outline: none;
     border-color: #1b7a4e;
 }
@@ -160,7 +164,10 @@ body {
     font-size: 16px;
 }
 
-.nav-links li:hover a,
+.nav-links li:hover a {
+    background-color: rgba(201, 162, 39, 0.25);
+}
+
 .nav-links li.active a {
     background-color: rgba(255,255,255,0.15);
 }
@@ -188,6 +195,10 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+}
+
+.topbar h1 i {
+    color: #c9a227;
 }
 
 .user-info {
@@ -220,6 +231,14 @@ body {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.card:nth-child(2n) {
+    border-top-color: #c9a227;
+}
+
+.card:nth-child(3n) {
+    border-top-color: #2e8b57;
+}
+
 .card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 20px rgba(0,0,0,0.12);
@@ -240,6 +259,10 @@ body {
     font-size: 28px;
     font-weight: 700;
     color: #1b7a4e;
+}
+
+.card:nth-child(2n) .value {
+    color: #c9a227;
 }
 
 /* ========== TABLES ========== */
@@ -267,7 +290,7 @@ table {
 }
 
 thead {
-    background-color: #f8f9fa;
+    background-color: #f0f7f3;
 }
 
 th, td {
@@ -310,9 +333,17 @@ td {
     color: white;
 }
 
+.btn-edit:hover {
+    background-color: #145c3b;
+}
+
 .btn-delete {
     background-color: #d93025;
     color: white;
+}
+
+.btn-delete:hover {
+    background-color: #b3261e;
 }
 
 /* ========== MODAL ========== */
@@ -335,6 +366,7 @@ td {
     width: 90%;
     max-width: 500px;
     position: relative;
+    border-top: 4px solid #c9a227;
 }
 
 .close-btn {

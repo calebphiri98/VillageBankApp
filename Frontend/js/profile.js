@@ -32,7 +32,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentTotalSavings = parseFloat(data.total_savings || 0);
             const maxLoan = currentTotalSavings * 3;
 
-            // Summary cards
             document.getElementById('summaryCards').innerHTML = `
                 <div class="profile-card">
                     <h3>Total Savings</h3>
@@ -52,13 +51,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             `;
 
-            // Loan limit
             document.getElementById('loanLimitBox').innerHTML = `
                 <strong>Your Savings:</strong> MWK ${currentTotalSavings.toLocaleString()}<br>
                 <strong>Maximum Loan Allowed:</strong> <span style="color:#c9a227;">MWK ${maxLoan.toLocaleString()}</span>
             `;
 
-            // Personal info display
             const m = data.member;
             document.getElementById('personalInfo').innerHTML = `
                 <div class="info-row"><span>Full Name</span><span>${m.full_name || '-'}</span></div>
@@ -75,7 +72,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="info-row"><span>Date Joined</span><span>${m.date_joined ? new Date(m.date_joined).toLocaleDateString() : '-'}</span></div>
             `;
 
-            // Fill edit form
             document.getElementById('full_name').value = m.full_name || '';
             document.getElementById('phone').value = m.phone || '';
             document.getElementById('gender').value = m.gender || '';
@@ -84,7 +80,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('village').value = m.village || '';
             document.getElementById('address').value = m.address || '';
 
-            // Savings
             document.getElementById('savingsBody').innerHTML = data.savings.length
                 ? data.savings.map(s => `
                     <tr>
@@ -94,7 +89,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 `).join('')
                 : `<tr><td colspan="2">No savings records</td></tr>`;
 
-            // Loans
             document.getElementById('loansBody').innerHTML = data.loans.length
                 ? data.loans.map(l => `
                     <tr>
@@ -109,7 +103,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 `).join('')
                 : `<tr><td colspan="7">No loans</td></tr>`;
 
-            // Fines
             document.getElementById('finesBody').innerHTML = data.fines.length
                 ? data.fines.map(f => `
                     <tr>
@@ -175,6 +168,54 @@ document.addEventListener('DOMContentLoaded', async () => {
             msg.style.color = 'red';
             msg.textContent = error.message;
         }
+    });
+
+    // Change Password
+    document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const msg = document.getElementById('passwordMessage');
+        msg.textContent = '';
+
+        const current_password = document.getElementById('current_password').value;
+        const new_password = document.getElementById('new_password').value;
+        const confirm_new_password = document.getElementById('confirm_new_password').value;
+
+        if (new_password !== confirm_new_password) {
+            msg.style.color = 'red';
+            msg.textContent = 'New passwords do not match';
+            return;
+        }
+
+        try {
+            const result = await apiRequest('/auth/change-password', 'PUT', {
+                current_password,
+                new_password
+            });
+            msg.style.color = 'green';
+            msg.textContent = result.message;
+            document.getElementById('changePasswordForm').reset();
+        } catch (error) {
+            msg.style.color = 'red';
+            msg.textContent = error.message;
+        }
+    });
+
+    // Show / hide password
+    document.querySelectorAll('.toggle-password').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const input = document.getElementById(btn.dataset.target);
+            const icon = btn.querySelector('i');
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
     });
 
     // Request Loan

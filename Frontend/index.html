@@ -7,17 +7,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-       .login-page {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background:
-        linear-gradient(135deg, rgba(27,122,78,0.45), rgba(20,92,59,0.50)),
-    url('images/login-bg.jpg')
-    center/cover no-repeat;
-    padding: 20px;
-}
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                linear-gradient(135deg, rgba(27,122,78,0.45), rgba(20,92,59,0.50)),
+                url('images/login-bg.jpg') center/cover no-repeat;
+            padding: 20px;
+        }
 
         .login-wrapper {
             width: 100%;
@@ -30,7 +29,7 @@
             border-radius: 16px;
             box-shadow: 0 12px 40px rgba(0,0,0,0.2);
             text-align: center;
-            border-top: 5px solid #1b7a4e;
+            border-top: 5px solid #c9a227;
         }
 
         .login-box .logo-icon {
@@ -75,6 +74,31 @@
             border-color: #1b7a4e;
         }
 
+        .password-wrap {
+            position: relative;
+        }
+
+        .password-wrap input {
+            width: 100%;
+            padding-right: 42px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #666;
+            font-size: 15px;
+        }
+
+        .toggle-password:hover {
+            color: #1b7a4e;
+        }
+
         .login-box .btn-primary {
             width: 100%;
             padding: 13px;
@@ -99,30 +123,45 @@
             min-height: 20px;
         }
 
-        .forgot-link {
+        .login-links {
+            margin-top: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-link {
             display: inline-block;
-            margin-top: 14px;
-            color: #1b7a4e;
+            padding: 10px 14px;
+            border-radius: 8px;
             text-decoration: none;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
+            transition: all 0.2s ease;
         }
 
-        .forgot-link:hover {
-            text-decoration: underline;
+        .btn-forgot {
+            background: #fff8e7;
+            color: #9a7b1a;
+            border: 1px solid #e6d29a;
         }
 
-        .back-home {
-            display: inline-block;
-            margin-top: 12px;
+        .btn-forgot:hover {
+            background: #c9a227;
+            color: white;
+            border-color: #c9a227;
+        }
+
+        .btn-home {
+            background: #eef8f1;
             color: #1b7a4e;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
+            border: 1px solid #b7dfc8;
         }
 
-        .back-home:hover {
-            text-decoration: underline;
+        .btn-home:hover {
+            background: #1b7a4e;
+            color: white;
+            border-color: #1b7a4e;
         }
     </style>
 </head>
@@ -144,7 +183,12 @@
 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" placeholder="Enter password" required>
+                    <div class="password-wrap">
+                        <input type="password" id="password" placeholder="Enter password" required>
+                        <button type="button" class="toggle-password" data-target="password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-primary">
@@ -154,19 +198,37 @@
 
             <p id="errorMessage" class="error-message"></p>
 
-            <a href="forgot-password.html" class="forgot-link">
-                Forgot Password?
-            </a>
-
-            <br>
-
-            <a href="home.html" class="back-home">
-                <i class="fas fa-arrow-left"></i> Back to Home
-            </a>
+            <div class="login-links">
+                <a href="forgot-password.html" class="btn-link btn-forgot">
+                    <i class="fas fa-key"></i> Forgot Password?
+                </a>
+                <a href="home.html" class="btn-link btn-home">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+            </div>
         </div>
     </div>
 
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
+    <script>
+        // Show / hide password
+        document.querySelectorAll('.toggle-password').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const input = document.getElementById(btn.dataset.target);
+                const icon = btn.querySelector('i');
+                if (!input) return;
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

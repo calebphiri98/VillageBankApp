@@ -48,6 +48,61 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/join-requests', joinRequestRoutes);
 app.use('/api/profile', profileRoutes);
 
+// Public impact stats for home page
+// Shows rates/counts only — NO fund/money amounts
+app.get('/api/public/impact', async (req, res) => {
+    try {
+        const [members] = await db.query(
+            `SELECT COUNT(*) AS total FROM members WHERE status = 'active'`
+        );
+
+        const [loanStats] = await db.query(`
+            SELECT
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
+                SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved,
+                SUM(CASE WHEN status = 'repaid' THEN 1 ELSE 0 END) AS repaid,
+                SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) AS rejected,
+                COUNT(*) AS total
+            FROM loans
+        `);
+
+        const pending = Number(loanStats[0].pending || 0);
+        const approved = Number(loanStats[0].approved || 0);
+        const repaid = Number(loanStats[0].repaid || 0);
+        const rejected = Number(loanStats[0].rejected || 0);
+        const totalLoans = Number(loanStats[0].total || 0);
+
+        // Recovery rate from loan counts (not money)
+        const completed = approved + repaid;
+        const recoveryRate = completed > 0 ? Math.round((repaid / completed) * 100) : 0;
+
+        // Group health score (0–100), no fund values
+        const activeMembers = Number(members[0].total || 0);
+        let health = 50;
+        if (activeMembers >= 5) health += 15;
+        if (activeMembers >= 10) health += 10;
+        if (recoveryRate >= 50) health += 15;
+        if (recoveryRate >= 80) health += 10;
+        if (totalLoans > 0) health += 5;
+        if (health > 100) health = 100;
+
+        res.json({
+            active_members: activeMembers,
+            pending,
+            approved,
+            repaid,
+            rejected,
+            recovery_rate: recoveryRate,
+            group_health: health
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error loading impact stats',
+            error: error.message
+        });
+    }
+});
+
 // Website homepage
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../Frontend/home.html'));

@@ -99,14 +99,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
 
         try {
-            await apiRequest('/members', 'POST', memberData);
+            const result = await apiRequest('/members', 'POST', memberData);
+
+            const username = result.username || 'N/A';
+            const tempPassword = result.temporaryPassword || 'Manase@123';
+
             formMessage.style.color = 'green';
-            formMessage.textContent = 'Member added successfully!';
-            
+            formMessage.innerHTML = `
+                <strong>Member created successfully</strong><br><br>
+                <strong>Username:</strong> ${username}<br>
+                <strong>Temporary Password:</strong> ${tempPassword}<br><br>
+                <small>Please share these details with the member.</small>
+            `;
+
+            alert(
+                `Member created successfully\n\n` +
+                `Username: ${username}\n` +
+                `Temporary Password: ${tempPassword}\n\n` +
+                `Please share these details with the member.`
+            );
+
             setTimeout(() => {
                 addModal.style.display = 'none';
                 loadMembers();
-            }, 800);
+            }, 6000);
         } catch (error) {
             formMessage.style.color = 'red';
             formMessage.textContent = error.message || 'Failed to add member';
@@ -166,34 +182,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             alert('Error: ' + error.message);
         }
     };
-        // If coming from an approved join request, open Add Member form pre-filled
+
+    // If coming from an approved join request, open Add Member form pre-filled
     const pendingMember = localStorage.getItem('pendingNewMember');
     if (pendingMember) {
         try {
             const data = JSON.parse(pendingMember);
             localStorage.removeItem('pendingNewMember');
 
-            // Open the Add Member modal
             addModal.style.display = 'block';
             formMessage.textContent = '';
             addMemberForm.reset();
 
-            // Pre-fill name and phone
             document.getElementById('full_name').value = data.full_name || '';
             document.getElementById('phone').value = data.phone || '';
-
-            // Focus on membership number so committee can type it
             document.getElementById('membership_number').focus();
         } catch (e) {
             localStorage.removeItem('pendingNewMember');
         }
     }
-    
 
     // Load data
     loadMembers();
 
-        // Mobile menu toggle
+    // Mobile menu toggle
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.querySelector('.sidebar');
 
