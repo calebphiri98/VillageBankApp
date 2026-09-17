@@ -19,6 +19,7 @@ router.get('/',
 // Get single member
 router.get('/:id', 
     protect, 
+    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
     getMemberById
 );
 

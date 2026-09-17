@@ -1,39 +1,46 @@
 const express = require('express');
 const router = express.Router();
 const { 
-    getAllLogs, 
-    getLogsByAction, 
-    getLogsByUser, 
-    getRecentActivity 
-} = require('../controllers/auditController');
+    recordFine, 
+    getAllFines, 
+    getMemberFines, 
+    getTotalFines, 
+    deleteFine 
+} = require('../controllers/fineController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// Get all audit logs (Committee only)
+// Record a fine
+router.post('/', 
+    protect, 
+    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
+    recordFine
+);
+
+// Get all fines
 router.get('/', 
     protect, 
     authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    getAllLogs
+    getAllFines
 );
 
-// Get recent activity
-router.get('/recent', 
+// Get total fines
+router.get('/total', 
     protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    getRecentActivity
+    getTotalFines
 );
 
-// Get logs by action type
-router.get('/action/:action', 
+// Get fines of a specific member
+router.get('/member/:memberId', 
     protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    getLogsByAction
+    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
+    getMemberFines
 );
 
-// Get logs by user
-router.get('/user/:userId', 
+// Delete a fine
+router.delete('/:id', 
     protect, 
     authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    getLogsByUser
+    deleteFine
 );
 
 module.exports = router;

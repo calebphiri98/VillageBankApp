@@ -8,7 +8,7 @@ const {
 } = require('../controllers/meetingController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// Create a meeting (Committee only)
+// Create a meeting
 router.post('/', 
     protect, 
     authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
@@ -25,12 +25,14 @@ router.get('/',
 // Get a specific meeting with attendance
 router.get('/:id', 
     protect, 
+    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
     getMeetingById
 );
 
 // Get attendance history of a member
 router.get('/member/:memberId/attendance', 
     protect, 
+    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
     getMemberAttendance
 );
 

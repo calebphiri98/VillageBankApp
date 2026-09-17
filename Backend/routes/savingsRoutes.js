@@ -10,21 +10,21 @@ const {
 } = require('../controllers/savingsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// Record a new saving (Committee only)
+// Record a new saving
 router.post('/', 
     protect, 
     authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
     recordSaving
 );
 
-// Get all savings (Committee only)
+// Get all savings
 router.get('/', 
     protect, 
     authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
     getAllSavings
 );
 
-// Get total group savings (Anyone logged in)
+// Get total group savings (any logged-in user)
 router.get('/total', 
     protect, 
     getTotalSavings
@@ -35,9 +35,7 @@ router.get('/total',
 router.get('/member/:memberId', 
     protect, 
     async (req, res, next) => {
-        // If the user is an ordinary member, they can only see their own records
         if (req.user.role === 'member') {
-            // We need to find the member_id linked to this user
             const db = require('../config/db');
             const [rows] = await db.query(
                 `SELECT id FROM members WHERE user_id = ?`, 
@@ -53,14 +51,14 @@ router.get('/member/:memberId',
     getMemberSavings
 );
 
-// Update a saving (Committee only)
+// Update a saving
 router.put('/:id', 
     protect, 
     authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
     updateSaving
 );
 
-// Delete a saving (Committee only)
+// Delete a saving
 router.delete('/:id', 
     protect, 
     authorize('admin', 'treasurer', 'secretary', 'chairperson'), 

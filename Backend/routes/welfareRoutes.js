@@ -9,14 +9,14 @@ const {
 } = require('../controllers/welfareController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// Record a contribution (Committee only)
+// Record a contribution
 router.post('/contribute', 
     protect, 
     authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
     recordContribution
 );
 
-// Record welfare assistance / payout (Committee only)
+// Record welfare assistance / payout
 router.post('/assist', 
     protect, 
     authorize('admin', 'treasurer', 'secretary', 'chairperson'), 

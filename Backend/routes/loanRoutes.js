@@ -12,8 +12,12 @@ const {
 } = require('../controllers/loanController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// Apply for a loan
-router.post('/apply', protect, applyLoan);
+// Apply / record a loan
+router.post('/apply', 
+    protect, 
+    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
+    applyLoan
+);
 
 // Approve or Reject a loan
 router.put('/:id/status', 
@@ -44,12 +48,24 @@ router.get('/outstanding',
 );
 
 // Get loans of a specific member
-router.get('/member/:memberId', protect, getMemberLoans);
+router.get('/member/:memberId', 
+    protect, 
+    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
+    getMemberLoans
+);
 
 // Get repayment history of a loan
-router.get('/:id/repayments', protect, getLoanRepayments);
+router.get('/:id/repayments', 
+    protect, 
+    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
+    getLoanRepayments
+);
 
 // Get full loan statement
-router.get('/:id/statement', protect, getLoanStatement);
+router.get('/:id/statement', 
+    protect, 
+    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
+    getLoanStatement
+);
 
 module.exports = router;

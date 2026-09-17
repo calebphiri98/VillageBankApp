@@ -9,7 +9,7 @@ const {
 } = require('../controllers/fineController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// Record a fine (Committee only)
+// Record a fine
 router.post('/', 
     protect, 
     authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
@@ -32,6 +32,7 @@ router.get('/total',
 // Get fines of a specific member
 router.get('/member/:memberId', 
     protect, 
+    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
     getMemberFines
 );
 

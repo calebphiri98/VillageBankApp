@@ -6,7 +6,7 @@ const {
 } = require('../controllers/reportController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// Main Dashboard Summary (Committee only)
+// Main Dashboard Summary
 router.get('/dashboard', 
     protect, 
     authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
@@ -14,8 +14,10 @@ router.get('/dashboard',
 );
 
 // Member financial summary
+// Committee can view any member; ordinary member handled in controller if needed
 router.get('/member/:memberId', 
     protect, 
+    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
     getMemberFinancialSummary
 );
 
