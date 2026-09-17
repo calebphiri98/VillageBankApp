@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             apiRequest('/loans'),
             apiRequest('/members'),
             apiRequest('/savings'),
-            apiRequest('/audit/recent')
+            apiRequest('/audit')
         ]);
 
         // Summary cards
