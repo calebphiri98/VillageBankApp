@@ -1,0 +1,59 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.9rem;
+  padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+  background: var(--card);
+  border-bottom: 1px solid var(--rule);
+  position: sticky;
+  top: 0;
+  z-index: 500;
+}
+
+.topbar__menu {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  flex-shrink: 0;
+  background: none;
+  border: 1.5px solid var(--rule-dark);
+  border-radius: var(--radius-sm);
+  font-size: 1.2rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.topbar__who { display: flex; align-items: center; gap: 0.55rem; flex: 1; min-width: 0; }
+
+.topbar__avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--leaf-wash);
+  color: var(--leaf-dark);
+  font-family: var(--head);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.topbar__names { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+
+.topbar__name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar__role { font-size: 0.8rem; color: var(--slate); }
+
+@media (min-width: 900px) {
+  .topbar__menu { display: none; }
+  .topbar { padding: 0.6rem 1.5rem; }
+}

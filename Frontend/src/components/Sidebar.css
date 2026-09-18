@@ -1,0 +1,100 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  background: var(--ink);
+  color: #D7E3DC;
+  width: 250px;
+  flex-shrink: 0;
+  padding: 1rem 0.7rem 1.1rem;
+  overflow-y: auto;
+}
+
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.2rem 0.5rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 0.7rem;
+}
+
+.sidebar__mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: var(--maize);
+  color: var(--ink);
+  font-family: var(--head);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.sidebar__brandtext {
+  font-family: var(--head);
+  font-weight: 700;
+  font-size: 0.98rem;
+  line-height: 1.2;
+  color: #fff;
+}
+
+.sidebar__list { list-style: none; margin: 0; padding: 0; flex: 1; }
+
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: var(--tap);
+  padding: 0.45rem 0.7rem;
+  border-radius: var(--radius-sm);
+  color: #C6D6CD;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.sidebar__link:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+
+.sidebar__link.is-on {
+  background: var(--leaf);
+  color: #fff;
+  font-weight: 600;
+}
+
+.sidebar__icon {
+  width: 1.15rem;
+  text-align: center;
+  font-size: 0.8rem;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+.sidebar__logout {
+  margin-top: 0.8rem;
+  min-height: var(--tap);
+  background: none;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  color: #D7E3DC;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.sidebar__logout:hover { background: rgba(255, 255, 255, 0.09); color: #fff; }
+
+/* On a phone the sidebar is a drawer; the bottom bar does the day-to-day work. */
+@media (max-width: 899px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 800;
+    width: 268px;
+    transform: translateX(-100%);
+    transition: transform 180ms ease;
+    box-shadow: var(--shadow-lift);
+  }
+  .sidebar.is-open { transform: translateX(0); }
+}

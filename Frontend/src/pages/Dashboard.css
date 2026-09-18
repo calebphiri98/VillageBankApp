@@ -1,0 +1,24 @@
+.dash__head { margin-bottom: 1rem; }
+
+.dash__greeting {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.dash__role {
+  margin: 0.1rem 0 0;
+  color: var(--slate);
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.dash__section {
+  margin-bottom: 1.4rem;
+}
+
+.dash__sectionTitle {
+  font-family: var(--head);
+  font-size: 1.02rem;
+  font-weight: 700;
+  margin: 0 0 0.6rem;
+}

@@ -1,0 +1,108 @@
+.loans__filters {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.9rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.loans__filter {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 0.25rem 0.85rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--rule-dark);
+  background: var(--card);
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--slate);
+  cursor: pointer;
+}
+
+.loans__filter.is-on { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+.loans__late { color: var(--flame); font-weight: 600; }
+
+/* The interest choice is the most important decision on this form,
+   so it gets a box of its own rather than sitting in a row of fields. */
+.loans__interest {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  padding: 0.8rem 0.9rem;
+  margin-bottom: 0.9rem;
+  background: var(--maize-wash);
+  border: 1.5px solid #E7D2A0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.loans__interest input {
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  flex-shrink: 0;
+  margin-top: 2px;
+  accent-color: var(--leaf);
+}
+
+.loans__interest > span { display: flex; flex-direction: column; gap: 0.15rem; }
+
+.loans__interestHelp { font-size: 0.86rem; color: #6B4A0E; }
+
+.loans__rows { margin: 0 0 1.1rem; }
+
+.loans__rows > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.loans__rows > div:last-child { border-bottom: 0; }
+
+.loans__rows dt { color: var(--slate); font-size: 0.92rem; flex-shrink: 0; }
+.loans__rows dd { margin: 0; font-weight: 600; text-align: right; }
+
+.loans__rows .is-strong dt { color: var(--ink); }
+.loans__rows .is-strong dd {
+  font-family: var(--head);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--flame);
+}
+
+.loans__decide, .loans__repay {
+  padding: 0.9rem;
+  background: var(--paper);
+  border-radius: var(--radius-sm);
+  margin-bottom: 1.1rem;
+}
+
+.loans__decideBtns { display: flex; gap: 0.55rem; margin-top: 0.7rem; }
+.loans__decideBtns .btn { flex: 1; }
+
+.loans__repayRow { display: flex; gap: 0.55rem; }
+.loans__repayRow input { flex: 1; }
+
+.loans__subhead {
+  font-size: 0.98rem;
+  margin: 0 0 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.loans__repayList { list-style: none; margin: 0; padding: 0; }
+
+.loans__repayList li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.92rem;
+}
+.loans__repayList li:last-child { border-bottom: 0; }

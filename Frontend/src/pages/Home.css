@@ -1,0 +1,197 @@
+.home { min-height: 100vh; background: var(--paper); }
+
+/* ---- top bar ---- */
+.home__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.7rem 1rem;
+  padding-top: calc(0.7rem + env(safe-area-inset-top, 0px));
+  background: var(--ink);
+}
+
+.home__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #fff;
+  font-family: var(--head);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.home__mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  background: var(--maize);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.home__baractions { display: flex; align-items: center; gap: 0.6rem; }
+
+/* ---- hero ---- */
+.home__hero {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 2.25rem 1.1rem 1.75rem;
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+}
+
+.home__title {
+  font-size: clamp(2rem, 7vw, 3.1rem);
+  line-height: 1.04;
+  margin: 0 0 0.7rem;
+  max-width: 16ch;
+}
+
+.home__lead {
+  font-size: 1.06rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  max-width: 54ch;
+  margin-bottom: 1.4rem;
+}
+
+.home__cta { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+
+/* The cycle clock: 52 marks, filling up as the year goes on. */
+.home__clock {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-left: 5px solid var(--maize);
+  border-radius: var(--radius);
+  padding: 1.1rem;
+  box-shadow: var(--shadow);
+}
+
+.home__weeks {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 5px;
+  margin-bottom: 0.8rem;
+}
+
+.home__week {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--rule);
+}
+
+.home__week.is-filled { background: var(--leaf); }
+
+.home__clockLabel { margin: 0; font-size: 0.92rem; color: var(--slate); }
+.home__clockLabel strong {
+  font-family: var(--head);
+  font-size: 1.5rem;
+  color: var(--ink);
+  margin-right: 0.15rem;
+}
+
+/* ---- stats ---- */
+.home__stats {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 0 1.1rem 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.85rem;
+}
+
+.home__stat {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+}
+
+.home__statNum {
+  display: block;
+  font-family: var(--head);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--leaf-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+.home__statLabel { display: block; font-size: 0.86rem; color: var(--slate); margin-top: 0.2rem; }
+
+/* ---- how it works ---- */
+.home__how {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 1.5rem 1.1rem 2.5rem;
+}
+
+.home__h2 { font-size: 1.6rem; margin-bottom: 1.1rem; }
+
+.home__steps {
+  list-style: none;
+  counter-reset: step;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 1.1rem;
+}
+
+.home__steps li {
+  counter-increment: step;
+  position: relative;
+  padding-left: 3.1rem;
+}
+
+.home__steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--maize);
+  font-family: var(--head);
+  font-weight: 800;
+}
+
+.home__steps h3 { margin: 0.2rem 0 0.3rem; font-size: 1.1rem; }
+.home__steps p { margin: 0; color: var(--ink-soft); }
+
+/* ---- join form ---- */
+.home__join { background: var(--ink); padding: 2.25rem 1.1rem; }
+
+.home__joinInner {
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 1.35rem;
+}
+
+.home__joinLead { color: var(--slate); font-size: 0.94rem; margin-bottom: 1.1rem; }
+.home__field { margin-bottom: 0.9rem; }
+
+.home__footer {
+  padding: 1.25rem 1.1rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+  color: var(--slate);
+  font-size: 0.88rem;
+  background: var(--paper);
+}
+.home__footer p { margin: 0; max-width: none; }
+
+@media (min-width: 880px) {
+  .home__hero { grid-template-columns: 1.15fr 0.85fr; padding-top: 3.5rem; padding-bottom: 2.5rem; }
+  .home__steps { grid-template-columns: repeat(3, 1fr); gap: 1.6rem; }
+}

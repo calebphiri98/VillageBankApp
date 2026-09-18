@@ -1,0 +1,36 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.shell__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell__content {
+  flex: 1;
+  padding: 1rem 0.9rem;
+  /* Room for the bottom tab bar on a phone. */
+  padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+}
+
+.shell__inner { max-width: var(--shell-max); margin: 0 auto; }
+
+.shell__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  border: 0;
+  padding: 0;
+  background: rgba(18, 38, 31, 0.45);
+  cursor: pointer;
+}
+
+@media (min-width: 900px) {
+  .shell__content { padding: 1.5rem; padding-bottom: 2.5rem; }
+  .shell__scrim { display: none; }
+}

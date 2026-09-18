@@ -1,0 +1,34 @@
+.members__user {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.86rem;
+  background: var(--paper);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.members__credRows { margin: 0 0 1rem; }
+
+.members__credRows > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.members__credRows > div:last-child { border-bottom: 0; }
+
+.members__credRows dt { color: var(--slate); font-size: 0.92rem; }
+.members__credRows dd { margin: 0; font-weight: 600; text-align: right; }
+
+.members__pass {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 1.3rem;
+  letter-spacing: 0.12em;
+  background: var(--maize-wash);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  color: var(--ink);
+}
+
+.members__actions { display: grid; gap: 0.5rem; }

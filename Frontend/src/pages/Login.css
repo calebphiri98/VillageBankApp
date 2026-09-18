@@ -1,0 +1,110 @@
+.login {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(31, 107, 77, 0.12), transparent 55%),
+    var(--paper);
+}
+
+.login__panel {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-top: 5px solid var(--maize);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lift);
+  padding: 1.35rem 1.35rem 1.5rem;
+}
+
+.login__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.4rem;
+}
+
+.login__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--head);
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--ink);
+  text-decoration: none;
+  line-height: 1.2;
+}
+
+.login__mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  background: var(--ink);
+  color: var(--maize);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.login__title { margin: 0 0 0.25rem; font-size: 1.6rem; }
+
+.login__sub { color: var(--slate); font-size: 0.94rem; margin-bottom: 1.2rem; }
+
+.login__alert {
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--radius-sm);
+  background: var(--flame-wash);
+  border-left: 4px solid var(--flame);
+  color: #7E271E;
+  font-size: 0.92rem;
+  font-weight: 500;
+  margin-bottom: 0.9rem;
+}
+
+.login__alert--locked {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.login__countdown {
+  font-family: var(--head);
+  font-size: 1.35rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.login__warn {
+  padding: 0.5rem 0.8rem;
+  border-radius: var(--radius-sm);
+  background: var(--maize-wash);
+  border-left: 4px solid var(--maize);
+  color: #6B4A0E;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.9rem;
+}
+
+.login__field { margin-bottom: 0.9rem; }
+
+.login__links {
+  margin-top: 1.15rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.92rem;
+}
+
+.login__join { color: var(--slate); }

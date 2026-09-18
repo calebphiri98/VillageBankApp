@@ -1,0 +1,20 @@
+.notfound {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: var(--paper);
+}
+
+.notfound__panel {
+  text-align: center;
+  max-width: 400px;
+  padding: 2rem 1.5rem;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.notfound__title { margin: 0 0 0.4rem; font-size: 1.5rem; }
+.notfound__body { color: var(--slate); margin-bottom: 1.2rem; }

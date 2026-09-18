@@ -1,0 +1,16 @@
+.fines__paid {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.7rem 0.85rem;
+  background: var(--paper);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.93rem;
+}
+
+.fines__paid input {
+  width: 22px; height: 22px; min-height: 0;
+  flex-shrink: 0; accent-color: var(--leaf);
+}

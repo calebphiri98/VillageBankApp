@@ -1,0 +1,59 @@
+.cyclebar {
+  background: var(--ink);
+  color: #D7E3DC;
+  border-radius: var(--radius);
+  padding: 0.9rem 1.05rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.cyclebar__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.7rem;
+}
+
+.cyclebar__label {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #9BB3A8;
+}
+
+.cyclebar__name {
+  margin: 0;
+  font-family: var(--head);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.cyclebar__remaining {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--maize);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.cyclebar__track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+}
+
+.cyclebar__fill {
+  height: 100%;
+  background: var(--maize);
+  border-radius: 999px;
+}
+
+.cyclebar__dates {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  color: #9BB3A8;
+}

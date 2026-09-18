@@ -1,0 +1,179 @@
+/* ---------------------------------------------------------------
+   Design tokens for the whole app.
+   The group meets outdoors and most phones are cheap Android
+   handsets, so: heavy contrast, big touch targets, no thin greys.
+   Colours come from the Malawi flag and from maize.
+   --------------------------------------------------------------- */
+:root {
+  --ink:        #12261F;   /* almost-black green, the "ink" of the ledger */
+  --ink-soft:   #35483F;
+  --slate:      #667972;   /* secondary text */
+  --paper:      #F2F5EF;   /* cool pale green page, not cream */
+  --card:       #FFFFFF;
+  --rule:       #D8E0D6;   /* ledger rule lines */
+  --rule-dark:  #B4C2B0;
+
+  --leaf:       #1F6B4D;   /* primary action */
+  --leaf-dark:  #164F39;
+  --leaf-wash:  #E4EFE8;
+
+  --maize:      #E8B33A;   /* money */
+  --maize-deep: #A9741A;
+  --maize-wash: #FBF0D6;
+
+  --flame:      #B23A2E;   /* danger, denial, overdue */
+  --flame-wash: #F7E3E0;
+
+  --sky:        #2A5D8F;   /* information */
+  --sky-wash:   #E2EBF4;
+
+  --radius:     10px;
+  --radius-sm:  6px;
+  --shadow:     0 1px 2px rgba(18, 38, 31, 0.10);
+  --shadow-lift: 0 6px 20px rgba(18, 38, 31, 0.14);
+
+  --head: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --body: 'Public Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  --tap: 46px;             /* minimum touch target */
+  --shell-max: 1180px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--head);
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0 0 0.4em;
+  letter-spacing: -0.015em;
+}
+h1 { font-size: 1.9rem; }
+h2 { font-size: 1.4rem; }
+h3 { font-size: 1.1rem; }
+
+p { margin: 0 0 1em; max-width: 68ch; }
+a { color: var(--leaf-dark); }
+
+/* Money is the point of this app, so it gets its own treatment:
+   tabular figures so columns line up down the page. */
+.money {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.money--big { font-family: var(--head); font-size: 1.85rem; font-weight: 800; letter-spacing: -0.02em; }
+.money--neg { color: var(--flame); }
+
+/* ---- shared form controls ---- */
+input, select, textarea, button { font-family: inherit; font-size: 1rem; }
+
+input, select, textarea {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid var(--rule-dark);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+}
+textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
+
+input:focus-visible, select:focus-visible, textarea:focus-visible,
+button:focus-visible, a:focus-visible {
+  outline: 3px solid var(--maize);
+  outline-offset: 1px;
+}
+
+input:disabled, select:disabled, textarea:disabled, button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ---- buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: var(--tap);
+  padding: 0.5rem 1.15rem;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--leaf);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 120ms ease;
+}
+.btn:hover:not(:disabled) { background: var(--leaf-dark); }
+.btn--ghost { background: transparent; color: var(--ink); border-color: var(--rule-dark); }
+.btn--ghost:hover:not(:disabled) { background: var(--leaf-wash); }
+.btn--danger { background: var(--flame); }
+.btn--danger:hover:not(:disabled) { background: #8E2C22; }
+.btn--gold { background: var(--maize); color: var(--ink); }
+.btn--gold:hover:not(:disabled) { background: #D5A32C; }
+.btn--small { min-height: 34px; padding: 0.2rem 0.7rem; font-size: 0.88rem; }
+.btn--full { width: 100%; }
+
+/* ---- small shared pieces ---- */
+.tag {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.tag--green  { background: var(--leaf-wash);  color: var(--leaf-dark);  border-color: #BBD8C7; }
+.tag--gold   { background: var(--maize-wash); color: var(--maize-deep); border-color: #E7D2A0; }
+.tag--red    { background: var(--flame-wash); color: var(--flame);      border-color: #E8C4BF; }
+.tag--blue   { background: var(--sky-wash);   color: var(--sky);        border-color: #C3D5E6; }
+.tag--grey   { background: #E8EDE6;           color: var(--slate);      border-color: var(--rule); }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.form-row { display: grid; gap: 0.9rem; margin-bottom: 0.9rem; }
+@media (min-width: 640px) { .form-row--2 { grid-template-columns: 1fr 1fr; } }
+
+.field-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.92rem;
+  margin-bottom: 0.25rem;
+}
+.field-hint { display: block; font-size: 0.82rem; color: var(--slate); margin-top: 0.2rem; }
+.field-error { display: block; font-size: 0.85rem; color: var(--flame); margin-top: 0.25rem; font-weight: 600; }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

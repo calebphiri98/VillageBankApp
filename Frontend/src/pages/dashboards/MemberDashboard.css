@@ -1,0 +1,81 @@
+.mdash__share {
+  background: var(--maize-wash);
+  border: 1px solid #E7D2A0;
+  border-left: 5px solid var(--maize);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+}
+
+.mdash__shareLabel {
+  margin: 0;
+  font-weight: 600;
+  color: var(--maize-deep);
+  font-size: 0.92rem;
+}
+
+.mdash__shareAmount {
+  font-family: var(--head);
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0.15rem 0 0.7rem;
+  color: var(--ink);
+}
+
+.mdash__loan, .mdash__meeting { margin-bottom: 1.4rem; }
+
+.mdash__loanCard {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 0.95rem 1.05rem 1.05rem;
+  box-shadow: var(--shadow);
+}
+
+.mdash__loanTop { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+
+.mdash__loanRows { margin: 0 0 0.9rem; }
+
+.mdash__loanRows > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.mdash__loanRows > div:last-child { border-bottom: 0; }
+
+.mdash__loanRows dt { color: var(--slate); font-size: 0.92rem; }
+.mdash__loanRows dd { margin: 0; font-weight: 600; }
+
+.mdash__loanRows .is-strong dt { color: var(--ink); font-weight: 600; }
+.mdash__loanRows .is-strong dd {
+  font-family: var(--head);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--flame);
+}
+
+.mdash__noLoan {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 1.05rem;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+.mdash__noLoan p { margin: 0; color: var(--slate); }
+
+.mdash__meetingLine {
+  margin: 0;
+  padding: 0.85rem 1.05rem;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--sky);
+  border-radius: var(--radius);
+}

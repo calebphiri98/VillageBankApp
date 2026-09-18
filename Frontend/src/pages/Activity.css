@@ -1,0 +1,37 @@
+.activity__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 0.6rem;
+  border-left: 2px solid var(--rule-dark);
+}
+
+.activity__item {
+  position: relative;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.55rem 0 0.55rem 0.85rem;
+}
+
+.activity__marker {
+  position: absolute;
+  left: -0.45rem;
+  top: 1.05rem;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--leaf);
+  border: 2px solid var(--paper);
+}
+
+.activity__body { min-width: 0; }
+
+.activity__action { margin: 0; font-weight: 600; font-size: 0.95rem; }
+
+.activity__details {
+  margin: 0.1rem 0 0;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  word-break: break-word;
+}
+
+.activity__meta { margin: 0.15rem 0 0; font-size: 0.78rem; color: var(--slate); }

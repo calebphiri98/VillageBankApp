@@ -1,0 +1,89 @@
+.ledger-wrap {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.ledger {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.94rem;
+}
+
+.ledger__caption {
+  caption-side: top;
+  text-align: left;
+  padding: 0.7rem 0.9rem 0;
+  font-size: 0.85rem;
+  color: var(--slate);
+}
+
+.ledger thead th {
+  text-align: left;
+  font-family: var(--head);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--slate);
+  padding: 0.6rem 0.9rem;
+  background: var(--paper);
+  border-bottom: 2px solid var(--rule-dark);
+  white-space: nowrap;
+}
+
+.ledger tbody td {
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: middle;
+}
+
+.ledger tbody tr:last-child td { border-bottom: 0; }
+.ledger tbody tr.is-clickable { cursor: pointer; }
+.ledger tbody tr.is-clickable:hover { background: var(--leaf-wash); }
+
+.ledger .is-right { text-align: right; }
+
+/* Below this width the table folds into stacked blocks. */
+@media (max-width: 780px) {
+  .ledger, .ledger tbody, .ledger tr, .ledger td { display: block; width: 100%; }
+  .ledger thead { display: none; }
+
+  .ledger tbody tr {
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .ledger tbody tr:last-child { border-bottom: 0; }
+
+  .ledger tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.2rem 0;
+    border: 0;
+    text-align: right;
+  }
+
+  .ledger tbody td::before {
+    content: attr(data-label);
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--slate);
+    text-align: left;
+    flex-shrink: 0;
+  }
+
+  /* The first cell is the row's name: give it its own line, no label. */
+  .ledger tbody td:first-child {
+    font-family: var(--head);
+    font-weight: 700;
+    font-size: 1.02rem;
+    text-align: left;
+    margin-bottom: 0.3rem;
+  }
+  .ledger tbody td:first-child::before { display: none; }
+
+  .ledger .is-wide-only { display: none; }
+  .ledger .is-right { text-align: right; }
+}

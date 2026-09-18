@@ -1,0 +1,45 @@
+.settings__form { max-width: 560px; }
+
+.settings__group {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 1rem 1.05rem 1.1rem;
+  margin-bottom: 1.1rem;
+  box-shadow: var(--shadow);
+}
+
+.settings__h2 {
+  font-family: var(--head);
+  font-size: 1.02rem;
+  margin: 0 0 0.8rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.settings__note {
+  font-size: 0.88rem;
+  color: var(--slate);
+  margin-bottom: 0.9rem;
+}
+
+.settings__row { margin-bottom: 0.9rem; }
+.settings__row:last-child { margin-bottom: 0; }
+
+.settings__switch {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.7rem 0.8rem;
+  background: var(--paper);
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.45rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.93rem;
+}
+
+.settings__switch input {
+  width: 22px; height: 22px; min-height: 0;
+  flex-shrink: 0; accent-color: var(--leaf);
+}

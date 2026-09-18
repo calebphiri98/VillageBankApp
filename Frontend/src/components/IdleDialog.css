@@ -1,0 +1,41 @@
+.idle {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(18, 38, 31, 0.62);
+}
+
+.idle__panel {
+  width: 100%;
+  max-width: 400px;
+  padding: 1.5rem 1.35rem;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lift);
+  text-align: center;
+  border-top: 5px solid var(--maize);
+}
+
+.idle__count {
+  font-family: var(--head);
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  margin: 0 0 0.35rem;
+  color: var(--maize-deep);
+  font-variant-numeric: tabular-nums;
+}
+
+.idle__title { margin: 0 0 0.4rem; }
+
+.idle__body {
+  margin: 0 auto 1.15rem;
+  color: var(--slate);
+  font-size: 0.95rem;
+}
+
+.idle__actions { display: grid; gap: 0.55rem; }

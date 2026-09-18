@@ -1,0 +1,31 @@
+.langtoggle {
+  display: inline-flex;
+  padding: 3px;
+  gap: 3px;
+  background: var(--paper);
+  border: 1.5px solid var(--rule-dark);
+  border-radius: 999px;
+}
+
+.langtoggle__btn {
+  border: 0;
+  background: none;
+  padding: 0.3rem 0.8rem;
+  min-height: 34px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--slate);
+  cursor: pointer;
+}
+
+.langtoggle__btn.is-on {
+  background: var(--ink);
+  color: #fff;
+}
+
+.langtoggle--compact .langtoggle__btn {
+  padding: 0.2rem 0.55rem;
+  font-size: 0.8rem;
+  min-height: 30px;
+}
