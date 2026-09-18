@@ -1,421 +1,346 @@
-const db = require('../config/db');
+const { query, one, tx } = require('../config/db');
+const { wrap } = require('../middleware/errorHandler');
+const { sendSMS } = require('../utils/sms');
+const { build } = require('../utils/messages');
+const { audit } = require('../utils/audit');
+const { getActiveCycle, getSetting, loanTotals } = require('../utils/helpers');
 
-// Apply for a loan (with borrowing conditions)
-// Apply for a loan (with borrowing conditions)
-const applyLoan = async (req, res) => {
-    const { member_id, amount, interest_rate, due_date } = req.body;
-    const applied_by = req.user.id;
-
-    try {
-        if (!member_id || !amount || amount <= 0) {
-            return res.status(400).json({ message: 'Member ID and a valid amount are required' });
-        }
-
-        // 1. Check if member exists and is active
-        const [member] = await db.query(
-            `SELECT m.id, u.full_name, u.phone 
-             FROM members m 
-             JOIN users u ON m.user_id = u.id 
-             WHERE m.id = ? AND m.status = 'active'`,
-            [member_id]
-        );
-
-        if (member.length === 0) {
-            return res.status(404).json({ message: 'Active member not found' });
-        }
-
-        // 2. Check if member already has a pending or approved loan
-        const [existingLoan] = await db.query(
-            `SELECT id, status FROM loans 
-             WHERE member_id = ? AND status IN ('pending', 'approved')`,
-            [member_id]
-        );
-
-        if (existingLoan.length > 0) {
-            return res.status(400).json({ 
-                message: `Member already has a ${existingLoan[0].status} loan. Cannot apply for a new one.` 
-            });
-        }
-
-        // 3. Get member's total savings
-        const [savingsResult] = await db.query(
-            `SELECT COALESCE(SUM(amount), 0) as total_savings 
-             FROM savings WHERE member_id = ?`,
-            [member_id]
-        );
-        const totalSavings = parseFloat(savingsResult[0].total_savings);
-
-        // 4. Borrowing limit: Maximum loan = 3 × total savings
-        const maxLoanAmount = totalSavings * 3;
-
-        if (totalSavings <= 0) {
-            return res.status(400).json({ 
-                message: 'Member has no savings. Cannot apply for a loan.' 
-            });
-        }
-
-        if (parseFloat(amount) > maxLoanAmount) {
-            return res.status(400).json({ 
-                message: `Loan amount exceeds the allowed limit. Maximum allowed is MWK ${maxLoanAmount.toLocaleString()} (3 × savings of MWK ${totalSavings.toLocaleString()})` 
-            });
-        }
-
-        // 5. Create the loan application (without applied_by to avoid column errors)
-        const [result] = await db.query(
-            `INSERT INTO loans (member_id, amount, interest_rate, status, due_date)
-             VALUES (?, ?, ?, 'pending', ?)`,
-            [member_id, amount, interest_rate || 10, due_date || null]
-        );
-
-        // Audit log
-        await db.query(
-            `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
-             VALUES (?, 'APPLY_LOAN', 'loans', ?, ?)`,
-            [applied_by, result.insertId, `Amount: ${amount}`]
-        );
-
-        res.status(201).json({
-            message: 'Loan application submitted successfully',
-            loanId: result.insertId,
-            max_allowed: maxLoanAmount,
-            member_savings: totalSavings
-        });
-
-    } catch (error) {
-        console.error('Apply Loan Error:', error.message);
-        res.status(500).json({ 
-            message: 'Error applying for loan', 
-            error: error.message 
-        });
-    }
-};
-// Reject or approve loan
-// Approve or Reject a loan
-const updateLoanStatus = async (req, res) => {
-    const { status } = req.body;
-    const loanId = req.params.id;
-    const updated_by = req.user.id;
-
-    try {
-        if (!['approved', 'rejected'].includes(status)) {
-            return res.status(400).json({ message: 'Status must be approved or rejected' });
-        }
-
-        // Get loan + member details before updating
-        const [loanData] = await db.query(`
-            SELECT l.amount, l.status, u.full_name, u.phone
-            FROM loans l
-            JOIN members m ON l.member_id = m.id
-            JOIN users u ON m.user_id = u.id
-            WHERE l.id = ?
-        `, [loanId]);
-
-        if (loanData.length === 0) {
-            return res.status(404).json({ message: 'Loan not found' });
-        }
-
-        if (loanData[0].status !== 'pending') {
-            return res.status(400).json({ message: 'Only pending loans can be approved or rejected' });
-        }
-
-        // Update status only (no approved_by column to avoid errors)
-        const [result] = await db.query(
-            `UPDATE loans SET status = ? WHERE id = ? AND status = 'pending'`,
-            [status, loanId]
-        );
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Pending loan not found' });
-        }
-
-        // Audit log
-        await db.query(
-            `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details) 
-             VALUES (?, ?, 'loans', ?, ?)`,
-            [updated_by, status === 'approved' ? 'APPROVE_LOAN' : 'REJECT_LOAN', loanId, `Status changed to ${status}`]
-        );
-
-        // Automatic SMS
-        if (loanData[0].phone) {
-            try {
-                const { sendSMS } = require('../utils/smsService');
-                let message = '';
-
-                if (status === 'approved') {
-                    message = `Dear ${loanData[0].full_name}, your loan of MWK ${loanData[0].amount} has been APPROVED. - Manase VSLA`;
-                } else {
-                    message = `Dear ${loanData[0].full_name}, your loan application of MWK ${loanData[0].amount} has been REJECTED. - Manase VSLA`;
-                }
-
-                await sendSMS(loanData[0].phone, message, updated_by);
-            } catch (smsError) {
-                console.error('SMS failed:', smsError.message);
-            }
-        }
-
-        res.json({ message: `Loan ${status} successfully` });
-    } catch (error) {
-        console.error('Update Loan Status Error:', error.message);
-        res.status(500).json({ message: 'Error updating loan status', error: error.message });
-    }
+const withBalance = (loan) => {
+  const { interest, totalDue } = loanTotals(loan);
+  const repaid = Number(loan.total_repaid || 0);
+  return {
+    ...loan,
+    amount: Number(loan.amount),
+    interest_rate: Number(loan.interest_rate),
+    interest_amount: interest,
+    total_due: totalDue,
+    total_repaid: repaid,
+    outstanding: Math.max(0, +(totalDue - repaid).toFixed(2)),
+  };
 };
 
-// Record a loan repayment (Improved)
-const recordRepayment = async (req, res) => {
-    const { loan_id, amount, date } = req.body;
-    const recorded_by = req.user.id;
+// POST /api/loans — a member borrows from the group's own money
+const applyLoan = wrap(async (req, res) => {
+  const { member_id, amount, with_interest = true, purpose, due_date } = req.body;
 
-    try {
-        if (!loan_id || !amount || amount <= 0) {
-            return res.status(400).json({ message: 'Loan ID and a valid amount are required' });
-        }
+  // A member may only borrow for herself; the committee may file on her behalf.
+  const borrowerId = req.user.role === 'member' ? req.user.member_id : Number(member_id);
+  if (!borrowerId) return res.status(400).json({ message: 'Choose who the loan is for.' });
+  if (!amount || Number(amount) <= 0) return res.status(400).json({ message: 'Enter an amount above zero.' });
 
-        // Get loan + member details
-        const [loan] = await db.query(`
-            SELECT l.id, l.amount, l.interest_rate, l.status, u.full_name, u.phone
-            FROM loans l
-            JOIN members m ON l.member_id = m.id
-            JOIN users u ON m.user_id = u.id
-            WHERE l.id = ?
-        `, [loan_id]);
+  const member = await one(
+    `SELECT m.id, u.full_name, u.phone, u.language
+       FROM members m JOIN users u ON u.id = m.user_id
+      WHERE m.id = $1 AND m.status = 'active'`,
+    [borrowerId]
+  );
+  if (!member) return res.status(404).json({ message: 'That member is not active.' });
 
-        if (loan.length === 0) {
-            return res.status(404).json({ message: 'Loan not found' });
-        }
+  const openLoan = await one(
+    `SELECT id, status FROM loans WHERE member_id = $1 AND status IN ('pending','approved')`,
+    [borrowerId]
+  );
+  if (openLoan) {
+    return res.status(400).json({
+      message: openLoan.status === 'pending'
+        ? 'There is already a loan request waiting for the committee.'
+        : 'This loan must be repaid before borrowing again.',
+    });
+  }
 
-        if (loan[0].status !== 'approved') {
-            return res.status(400).json({ message: 'Only approved loans can receive repayments' });
-        }
+  const cycle = await getActiveCycle();
+  if (!cycle) return res.status(400).json({ message: 'No saving cycle is running.' });
 
-        // Calculate total already repaid
-        const [totalRepaidResult] = await db.query(
-            `SELECT COALESCE(SUM(amount), 0) as total FROM loan_repayments WHERE loan_id = ?`,
-            [loan_id]
-        );
-        const totalPaid = parseFloat(totalRepaidResult[0].total);
+  const savingsRow = await one(
+    `SELECT COALESCE(SUM(amount),0)::float AS total FROM savings WHERE member_id = $1`, [borrowerId]
+  );
+  const totalSavings = savingsRow.total;
+  if (totalSavings <= 0) {
+    return res.status(400).json({ message: 'She has not saved anything yet, so she cannot borrow.' });
+  }
 
-        // Calculate total amount due (Principal + Interest)
-        const principal = parseFloat(loan[0].amount);
-        const interestRate = parseFloat(loan[0].interest_rate);
-        const interest = (principal * interestRate) / 100;
-        const totalDue = principal + interest;
+  const multiplier = Number(await getSetting('loan_multiplier', '3'));
+  const maxLoan = +(totalSavings * multiplier).toFixed(2);
+  if (Number(amount) > maxLoan) {
+    return res.status(400).json({
+      message: `The most she can borrow is ${maxLoan.toLocaleString()} — ${multiplier} times her savings of ${totalSavings.toLocaleString()}.`,
+      max_allowed: maxLoan, member_savings: totalSavings,
+    });
+  }
 
-        const remaining = totalDue - totalPaid;
+  // Everything must come back before the cycle closes.
+  const cycleEnd = new Date(cycle.end_date);
+  let due = due_date ? new Date(due_date) : null;
+  if (!due) {
+    due = new Date(Math.min(Date.now() + 90 * 86400000, cycleEnd.getTime()));
+  }
+  if (due > cycleEnd) {
+    return res.status(400).json({
+      message: `The repayment date must be on or before ${cycleEnd.toISOString().slice(0, 10)}, when the cycle ends.`,
+    });
+  }
+  if (due <= new Date(Date.now() - 86400000)) {
+    return res.status(400).json({ message: 'The repayment date must be in the future.' });
+  }
 
-        if (amount > remaining) {
-            return res.status(400).json({ 
-                message: `Repayment amount exceeds remaining balance. Remaining: ${remaining.toFixed(2)}` 
-            });
-        }
+  const defaultRate = Number(await getSetting('default_interest_rate', '10'));
+  const carriesInterest = with_interest !== false && String(with_interest) !== 'false';
 
-        // Record the repayment
-        const [result] = await db.query(
-            `INSERT INTO loan_repayments (loan_id, amount, date, recorded_by) 
-             VALUES (?, ?, ?, ?)`,
-            [loan_id, amount, date || new Date(), recorded_by]
-        );
+  const loan = await one(
+    `INSERT INTO loans (member_id, cycle_id, amount, with_interest, interest_rate, purpose, due_date, status)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,'pending') RETURNING *`,
+    [borrowerId, cycle.id, amount, carriesInterest, carriesInterest ? defaultRate : 0,
+     purpose || null, due.toISOString().slice(0, 10)]
+  );
 
-        const newTotalPaid = totalPaid + parseFloat(amount);
+  await audit(req.user.id, 'APPLY_LOAN', 'loans', loan.id,
+    `${member.full_name}: ${amount}, interest ${carriesInterest ? defaultRate + '%' : 'none'}`);
 
-        // If fully paid, mark as repaid
-        if (newTotalPaid >= totalDue) {
-            await db.query(`UPDATE loans SET status = 'repaid' WHERE id = ?`, [loan_id]);
-        }
+  await sendSMS(member.phone, build('loanApplied', member.language, { name: member.full_name, amount }),
+    { name: member.full_name, category: 'loan', sentBy: req.user.id });
 
-        // Audit log
-        await db.query(
-            `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details) 
-             VALUES (?, 'RECORD_REPAYMENT', 'loan_repayments', ?, ?)`,
-            [recorded_by, result.insertId, `Amount: ${amount}`]
-        );
+  res.status(201).json({
+    message: 'Loan request sent to the committee.',
+    loan: withBalance({ ...loan, total_repaid: 0 }),
+    max_allowed: maxLoan, member_savings: totalSavings,
+  });
+});
 
-        // ===== AUTOMATIC SMS =====
-        if (loan[0].phone) {
-            const { sendSMS } = require('../utils/smsService');
-            const message = `Dear ${loan[0].full_name}, your loan repayment of MWK ${amount} has been received. Remaining balance: MWK ${(totalDue - newTotalPaid).toFixed(2)}. - Manase VSLA`;
-            await sendSMS(loan[0].phone, message, recorded_by);
-        }
+// PATCH /api/loans/:id/decision  { status: 'approved' | 'rejected', note }
+const decideLoan = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const { status, note } = req.body;
 
-        res.status(201).json({ 
-            message: 'Repayment recorded successfully', 
-            repaymentId: result.insertId,
-            totalPaid: newTotalPaid,
-            totalDue: totalDue,
-            remaining: totalDue - newTotalPaid
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Error recording repayment', error: error.message });
+  if (!['approved', 'rejected'].includes(status)) {
+    return res.status(400).json({ message: 'The decision must be approved or rejected.' });
+  }
+
+  const loan = await one(
+    `SELECT l.*, u.full_name, u.phone, u.language
+       FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
+      WHERE l.id = $1`,
+    [id]
+  );
+  if (!loan) return res.status(404).json({ message: 'That loan request does not exist.' });
+  if (loan.status !== 'pending') {
+    return res.status(400).json({ message: 'That request has already been decided.' });
+  }
+
+  // Do not lend out money the box does not have.
+  if (status === 'approved') {
+    const box = await one(
+      `SELECT
+         COALESCE((SELECT SUM(amount) FROM savings),0)
+       + COALESCE((SELECT SUM(amount) FROM fines WHERE paid = TRUE),0)
+       + COALESCE((SELECT SUM(amount) FROM loan_repayments),0)
+       - COALESCE((SELECT SUM(amount) FROM loans WHERE status IN ('approved','repaid','defaulted')),0)
+         AS cash`
+    );
+    const available = Number(box.cash || 0);
+    if (Number(loan.amount) > available) {
+      return res.status(400).json({
+        message: `The box only has ${available.toLocaleString()} available. That is less than this loan.`,
+        available,
+      });
     }
-};
-// Get all loans (with outstanding balance)
-const getAllLoans = async (req, res) => {
-    try {
-        const [loans] = await db.query(`
-            SELECT l.id, l.amount, l.interest_rate, l.status, l.due_date,
-                   m.membership_number, u.full_name, u.phone,
-                   COALESCE((SELECT SUM(amount) FROM loan_repayments WHERE loan_id = l.id), 0) as total_repaid
-            FROM loans l
-            JOIN members m ON l.member_id = m.id
-            JOIN users u ON m.user_id = u.id
-            ORDER BY l.id DESC
-        `);
+  }
 
-        // Calculate outstanding balance for each loan
-        const loansWithBalance = loans.map(loan => {
-            const principal = parseFloat(loan.amount);
-            const interest = (principal * parseFloat(loan.interest_rate)) / 100;
-            const totalDue = principal + interest;
-            const totalRepaid = parseFloat(loan.total_repaid);
-            const outstanding = totalDue - totalRepaid;
+  await query(
+    `UPDATE loans SET status = $2, decision_note = $3, decided_at = NOW(), approved_by = $4 WHERE id = $1`,
+    [id, status, note || null, req.user.id]
+  );
 
-            return {
-                ...loan,
-                interest_amount: interest,
-                total_due: totalDue,
-                outstanding_balance: outstanding > 0 ? outstanding : 0
-            };
-        });
+  await audit(req.user.id, status === 'approved' ? 'APPROVE_LOAN' : 'REJECT_LOAN', 'loans', id,
+    `${loan.full_name}: ${loan.amount}${note ? ' — ' + note : ''}`);
 
-        res.json(loansWithBalance);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching loans', error: error.message });
+  const { totalDue } = loanTotals(loan);
+  const sms = await sendSMS(
+    loan.phone,
+    status === 'approved'
+      ? build('loanApproved', loan.language, {
+          name: loan.full_name, amount: loan.amount, totalDue, dueDate: loan.due_date })
+      : build('loanRejected', loan.language, { name: loan.full_name, amount: loan.amount, note }),
+    { name: loan.full_name, category: 'loan', sentBy: req.user.id }
+  );
+
+  res.json({
+    message: status === 'approved'
+      ? `Loan approved. ${loan.full_name} has been told.`
+      : `Loan turned down. ${loan.full_name} has been told.`,
+    sms_sent: sms.ok,
+  });
+});
+
+// POST /api/loans/:id/repayments
+const recordRepayment = wrap(async (req, res) => {
+  const loanId = Number(req.params.id);
+  const { amount, date } = req.body;
+
+  if (!amount || Number(amount) <= 0) {
+    return res.status(400).json({ message: 'Enter an amount above zero.' });
+  }
+
+  const loan = await one(
+    `SELECT l.*, u.full_name, u.phone, u.language
+       FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
+      WHERE l.id = $1`,
+    [loanId]
+  );
+  if (!loan) return res.status(404).json({ message: 'That loan does not exist.' });
+  if (loan.status !== 'approved') {
+    return res.status(400).json({ message: 'Only an approved loan can take repayments.' });
+  }
+
+  const paidRow = await one(
+    `SELECT COALESCE(SUM(amount),0)::float AS paid,
+            COALESCE(SUM(principal_part),0)::float AS principal_paid
+       FROM loan_repayments WHERE loan_id = $1`,
+    [loanId]
+  );
+
+  const { principal, interest, totalDue } = loanTotals(loan);
+  const remaining = +(totalDue - paidRow.paid).toFixed(2);
+  const pay = Number(amount);
+
+  if (pay > remaining + 0.01) {
+    return res.status(400).json({
+      message: `That is more than she owes. The balance is ${remaining.toLocaleString()}.`,
+      remaining,
+    });
+  }
+
+  // Principal comes off first; what is left over is interest, banked separately
+  // because interest does not go back into anyone's savings.
+  const principalOwing = Math.max(0, +(principal - paidRow.principal_paid).toFixed(2));
+  const principalPart = Math.min(pay, principalOwing);
+  const interestPart = +(pay - principalPart).toFixed(2);
+
+  const result = await tx(async (client) => {
+    const { rows } = await client.query(
+      `INSERT INTO loan_repayments (loan_id, amount, principal_part, interest_part, date, recorded_by)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, amount::float, date`,
+      [loanId, pay, principalPart, interestPart, date || new Date().toISOString().slice(0, 10), req.user.id]
+    );
+
+    const newPaid = +(paidRow.paid + pay).toFixed(2);
+    if (newPaid >= totalDue - 0.01) {
+      await client.query(`UPDATE loans SET status = 'repaid' WHERE id = $1`, [loanId]);
     }
-};
+    return { repayment: rows[0], newPaid, cleared: newPaid >= totalDue - 0.01 };
+  });
 
-// Get loans of a specific member
-const getMemberLoans = async (req, res) => {
-    try {
-        const [loans] = await db.query(`
-            SELECT l.id, l.amount, l.interest_rate, l.status, l.due_date,
-                   COALESCE((SELECT SUM(amount) FROM loan_repayments WHERE loan_id = l.id), 0) as total_repaid
-            FROM loans l
-            WHERE l.member_id = ?
-            ORDER BY l.id DESC
-        `, [req.params.memberId]);
+  await audit(req.user.id, 'RECORD_REPAYMENT', 'loan_repayments', result.repayment.id,
+    `${loan.full_name}: ${pay} (principal ${principalPart}, interest ${interestPart})`);
 
-        const loansWithBalance = loans.map(loan => {
-            const principal = parseFloat(loan.amount);
-            const interest = (principal * parseFloat(loan.interest_rate)) / 100;
-            const totalDue = principal + interest;
-            const totalRepaid = parseFloat(loan.total_repaid);
+  const stillOwing = Math.max(0, +(totalDue - result.newPaid).toFixed(2));
+  await sendSMS(
+    loan.phone,
+    result.cleared
+      ? build('loanCleared', loan.language, { name: loan.full_name })
+      : build('repaymentRecorded', loan.language, { name: loan.full_name, amount: pay, remaining: stillOwing }),
+    { name: loan.full_name, category: 'loan', sentBy: req.user.id }
+  );
 
-            return {
-                ...loan,
-                interest_amount: interest,
-                total_due: totalDue,
-                outstanding_balance: totalDue - totalRepaid > 0 ? totalDue - totalRepaid : 0
-            };
-        });
+  res.status(201).json({
+    message: result.cleared ? 'Loan fully repaid.' : 'Repayment recorded.',
+    repayment: result.repayment,
+    total_due: totalDue, total_repaid: result.newPaid, outstanding: stillOwing,
+    interest_banked: interestPart, interest_total: interest, cleared: result.cleared,
+  });
+});
 
-        res.json(loansWithBalance);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching member loans', error: error.message });
-    }
-};
+// GET /api/loans
+const listLoans = wrap(async (req, res) => {
+  const { status, member_id } = req.query;
+  const where = [];
+  const params = [];
 
-// Get outstanding loans summary
-const getOutstandingLoans = async (req, res) => {
-    try {
-        const [loans] = await db.query(`
-            SELECT l.id, l.amount, l.interest_rate,
-                   COALESCE((SELECT SUM(amount) FROM loan_repayments WHERE loan_id = l.id), 0) as total_repaid
-            FROM loans l
-            WHERE l.status = 'approved'
-        `);
+  // A member only ever sees her own loans.
+  if (req.user.role === 'member') { params.push(req.user.member_id); where.push(`l.member_id = $${params.length}`); }
+  else if (member_id) { params.push(member_id); where.push(`l.member_id = $${params.length}`); }
+  if (status) { params.push(status); where.push(`l.status = $${params.length}`); }
 
-        let totalOutstanding = 0;
-        let count = 0;
+  const rows = await query(
+    `SELECT l.*, m.membership_number, u.full_name, u.phone,
+            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid,
+            a.full_name AS decided_by_name
+       FROM loans l
+       JOIN members m ON m.id = l.member_id
+       JOIN users u ON u.id = m.user_id
+       LEFT JOIN users a ON a.id = l.approved_by
+      ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      ORDER BY
+        CASE l.status WHEN 'pending' THEN 1 WHEN 'approved' THEN 2 ELSE 3 END,
+        l.id DESC`,
+    params
+  );
+  res.json(rows.map(withBalance));
+});
 
-        loans.forEach(loan => {
-            const principal = parseFloat(loan.amount);
-            const interest = (principal * parseFloat(loan.interest_rate)) / 100;
-            const outstanding = (principal + interest) - parseFloat(loan.total_repaid);
-            if (outstanding > 0) {
-                totalOutstanding += outstanding;
-                count++;
-            }
-        });
+// GET /api/loans/:id
+const getLoan = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const loan = await one(
+    `SELECT l.*, m.membership_number, u.full_name, u.phone,
+            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
+       FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
+      WHERE l.id = $1`,
+    [id]
+  );
+  if (!loan) return res.status(404).json({ message: 'That loan does not exist.' });
+  if (req.user.role === 'member' && loan.member_id !== req.user.member_id) {
+    return res.status(403).json({ message: 'You can only view your own loans.' });
+  }
 
-        res.json({
-            total_outstanding_loans: count,
-            total_outstanding_amount: totalOutstanding
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Error calculating outstanding loans', error: error.message });
-    }
-};
+  const repayments = await query(
+    `SELECT r.id, r.amount::float, r.principal_part::float, r.interest_part::float, r.date, u.full_name AS recorded_by_name
+       FROM loan_repayments r LEFT JOIN users u ON u.id = r.recorded_by
+      WHERE r.loan_id = $1 ORDER BY r.date, r.id`,
+    [id]
+  );
+  res.json({ loan: withBalance(loan), repayments });
+});
 
-// Get repayment history of a specific loan
-const getLoanRepayments = async (req, res) => {
-    try {
-        const [repayments] = await db.query(`
-            SELECT id, amount, date, recorded_by
-            FROM loan_repayments
-            WHERE loan_id = ?
-            ORDER BY date ASC
-        `, [req.params.id]);
+// GET /api/loans/overdue — who has not paid before the cycle ends
+const overdueLoans = wrap(async (req, res) => {
+  const rows = await query(
+    `SELECT l.*, u.full_name, u.phone, u.language, m.membership_number,
+            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
+       FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
+      WHERE l.status = 'approved' AND l.due_date < CURRENT_DATE
+      ORDER BY l.due_date`
+  );
+  res.json(rows.map(withBalance));
+});
 
-        res.json(repayments);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching repayments', error: error.message });
-    }
-};
+// POST /api/loans/remind — text everyone whose loan is due soon or late
+const sendReminders = wrap(async (req, res) => {
+  const days = Number(req.body.within_days || 7);
+  const rows = await query(
+    `SELECT l.*, u.full_name, u.phone, u.language,
+            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
+       FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
+      WHERE l.status = 'approved' AND l.due_date <= CURRENT_DATE + ($1 || ' days')::interval`,
+    [String(days)]
+  );
 
-// Get full loan statement
-const getLoanStatement = async (req, res) => {
-    try {
-        // Get loan details
-        const [loans] = await db.query(`
-            SELECT l.id, l.amount, l.interest_rate, l.status, l.due_date,
-                   m.membership_number, u.full_name, u.phone
-            FROM loans l
-            JOIN members m ON l.member_id = m.id
-            JOIN users u ON m.user_id = u.id
-            WHERE l.id = ?
-        `, [req.params.id]);
+  let sent = 0;
+  for (const raw of rows) {
+    const loan = withBalance(raw);
+    if (loan.outstanding <= 0) continue;
+    const result = await sendSMS(
+      loan.phone,
+      build('loanDueSoon', loan.language, { name: loan.full_name, outstanding: loan.outstanding, dueDate: loan.due_date }),
+      { name: loan.full_name, category: 'loan_reminder', sentBy: req.user.id }
+    );
+    if (result.ok) sent++;
+    await new Promise((r) => setTimeout(r, 350));
+  }
 
-        if (loans.length === 0) {
-            return res.status(404).json({ message: 'Loan not found' });
-        }
-
-        const loan = loans[0];
-        const principal = parseFloat(loan.amount);
-        const interest = (principal * parseFloat(loan.interest_rate)) / 100;
-        const totalDue = principal + interest;
-
-        // Get all repayments
-        const [repayments] = await db.query(`
-            SELECT id, amount, date
-            FROM loan_repayments
-            WHERE loan_id = ?
-            ORDER BY date ASC
-        `, [req.params.id]);
-
-        const totalRepaid = repayments.reduce((sum, r) => sum + parseFloat(r.amount), 0);
-        const outstanding = totalDue - totalRepaid;
-
-        res.json({
-            loan: {
-                ...loan,
-                interest_amount: interest,
-                total_due: totalDue,
-                total_repaid: totalRepaid,
-                outstanding_balance: outstanding > 0 ? outstanding : 0
-            },
-            repayments: repayments
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Error generating loan statement', error: error.message });
-    }
-};
+  await audit(req.user.id, 'SEND_LOAN_REMINDERS', 'loans', null, `${sent} reminder(s)`);
+  res.json({ message: `${sent} reminder(s) sent.`, sent, considered: rows.length });
+});
 
 module.exports = {
-    applyLoan,
-    updateLoanStatus,
-    recordRepayment,
-    getAllLoans,
-    getMemberLoans,
-    getOutstandingLoans,
-    getLoanRepayments,
-    getLoanStatement
+  applyLoan, decideLoan, recordRepayment, listLoans, getLoan, overdueLoans, sendReminders,
 };

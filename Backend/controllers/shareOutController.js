@@ -1,151 +1,274 @@
-const db = require('../config/db');
+const { query, one, tx } = require('../config/db');
+const { wrap } = require('../middleware/errorHandler');
+const { sendSMS } = require('../utils/sms');
+const { build } = require('../utils/messages');
+const { audit } = require('../utils/audit');
+const { getActiveCycle, getSetting, isYes } = require('../utils/helpers');
 
-// Calculate and perform Share-Out
-const performShareOut = async (req, res) => {
-    const { cycle_id } = req.body;
-    const distributed_by = req.user.id;
+/**
+ * Work out what the box is worth and what each woman is owed.
+ *
+ * Savings always come back to the woman who saved them.
+ * Interest, fines and welfare are only added to the pot if the group's
+ * settings say so — by default interest stays in the box and is not shared,
+ * because members can choose to borrow without interest at all.
+ */
+async function computeShareOut(cycleId) {
+  const [shareInterest, shareFines, shareWelfare] = await Promise.all([
+    getSetting('include_interest_in_shareout', 'no'),
+    getSetting('include_fines_in_shareout', 'yes'),
+    getSetting('include_welfare_in_shareout', 'no'),
+  ]);
 
-    try {
-        // 1. Get the setting: should welfare be included?
-        const [setting] = await db.query(
-            `SELECT setting_value FROM settings WHERE setting_key = 'include_welfare_in_shareout'`
-        );
-        const includeWelfare = setting.length > 0 && setting[0].setting_value.toLowerCase() === 'yes';
+  const cycleFilter = cycleId ? 'cycle_id = $1' : 'TRUE';
+  const params = cycleId ? [cycleId] : [];
 
-        // 2. Total Savings
-        const [savingsResult] = await db.query(`
-            SELECT COALESCE(SUM(amount), 0) as total_savings FROM savings
-        `);
-        const totalSavings = parseFloat(savingsResult[0].total_savings);
+  const savingsRow = await one(
+    `SELECT COALESCE(SUM(amount),0)::float AS total FROM savings WHERE ${cycleFilter}`, params);
 
-        // 3. Total Interest from Loans
-        const [interestResult] = await db.query(`
-            SELECT COALESCE(SUM(amount * interest_rate / 100), 0) as total_interest
-            FROM loans
-            WHERE status IN ('approved', 'repaid')
-        `);
-        const totalInterest = parseFloat(interestResult[0].total_interest);
+  // Interest actually collected, not interest merely charged.
+  const interestRow = await one(
+    `SELECT COALESCE(SUM(r.interest_part),0)::float AS total
+       FROM loan_repayments r JOIN loans l ON l.id = r.loan_id
+      WHERE ${cycleId ? 'l.cycle_id = $1' : 'TRUE'}`, params);
 
-        // 4. Total Fines
-        const [finesResult] = await db.query(`
-            SELECT COALESCE(SUM(amount), 0) as total_fines FROM fines
-        `);
-        const totalFines = parseFloat(finesResult[0].total_fines);
+  const finesRow = await one(
+    `SELECT COALESCE(SUM(amount),0)::float AS total FROM fines WHERE paid = TRUE AND ${cycleFilter}`, params);
 
-        // 5. Total Welfare (only if setting allows it)
-        let totalWelfare = 0;
-        if (includeWelfare) {
-            const [welfareResult] = await db.query(`
-                SELECT COALESCE(SUM(amount), 0) as total_welfare 
-                FROM welfare_fund 
-                WHERE type = 'contribution'
-            `);
-            totalWelfare = parseFloat(welfareResult[0].total_welfare);
-        }
+  const welfareRow = await one(
+    `SELECT (COALESCE(SUM(CASE WHEN type='contribution' THEN amount ELSE 0 END),0)
+           - COALESCE(SUM(CASE WHEN type='payout' THEN amount ELSE 0 END),0))::float AS total
+       FROM welfare_fund WHERE ${cycleFilter}`, params);
 
-        const totalFund = totalSavings + totalInterest + totalFines + totalWelfare;
+  const totalSavings = savingsRow.total;
+  const interestPot = isYes(shareInterest) ? interestRow.total : 0;
+  const finesPot = isYes(shareFines) ? finesRow.total : 0;
+  const welfarePot = isYes(shareWelfare) ? Math.max(0, welfareRow.total) : 0;
+  const profitPot = +(interestPot + finesPot + welfarePot).toFixed(2);
+  const totalFund = +(totalSavings + profitPot).toFixed(2);
 
-        if (totalFund <= 0) {
-            return res.status(400).json({ message: 'No funds available for share-out' });
-        }
+  const members = await query(
+    `SELECT m.id AS member_id, m.membership_number, u.full_name, u.phone, u.language,
+            COALESCE((SELECT SUM(s.amount) FROM savings s
+                       WHERE s.member_id = m.id AND ${cycleId ? 's.cycle_id = $1' : 'TRUE'}),0)::float AS member_savings,
+            COALESCE((SELECT SUM(f.amount) FROM fines f
+                       WHERE f.member_id = m.id AND f.paid = FALSE),0)::float AS unpaid_fines,
+            COALESCE((SELECT SUM(x.owing) FROM (
+                        SELECT (l.amount + CASE WHEN l.with_interest THEN l.amount * l.interest_rate / 100 ELSE 0 END)
+                               - COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0) AS owing
+                          FROM loans l
+                         WHERE l.member_id = m.id AND l.status = 'approved'
+                      ) x),0)::float AS unpaid_loan
+       FROM members m JOIN users u ON u.id = m.user_id
+      WHERE m.status = 'active'
+      ORDER BY u.full_name`,
+    params
+  );
 
-        // 6. Get each active member’s savings
-        const [memberSavings] = await db.query(`
-            SELECT m.id as member_id, u.full_name, m.membership_number,
-                   COALESCE(SUM(s.amount), 0) as member_savings
-            FROM members m
-            JOIN users u ON m.user_id = u.id
-            LEFT JOIN savings s ON m.id = s.member_id
-            WHERE m.status = 'active'
-            GROUP BY m.id, u.full_name, m.membership_number
-        `);
+  // Profit is split in proportion to what each woman saved.
+  const shares = members.map((m) => {
+    const proportion = totalSavings > 0 ? m.member_savings / totalSavings : 0;
+    const profitShare = +(proportion * profitPot).toFixed(2);
+    const deductions = +(m.unpaid_fines + Math.max(0, m.unpaid_loan)).toFixed(2);
+    const shareAmount = +Math.max(0, m.member_savings + profitShare - deductions).toFixed(2);
+    return { ...m, proportion: +(proportion * 100).toFixed(2), profit_share: profitShare,
+             deductions, share_amount: shareAmount };
+  });
 
-        if (memberSavings.length === 0) {
-            return res.status(400).json({ message: 'No active members found' });
-        }
+  return {
+    breakdown: {
+      total_savings: totalSavings,
+      interest_collected: interestRow.total,
+      interest_shared: interestPot,
+      fines_collected: finesRow.total,
+      fines_shared: finesPot,
+      welfare_balance: welfareRow.total,
+      welfare_shared: welfarePot,
+      profit_pot: profitPot,
+      total_fund: totalFund,
+    },
+    settings: {
+      include_interest_in_shareout: shareInterest,
+      include_fines_in_shareout: shareFines,
+      include_welfare_in_shareout: shareWelfare,
+    },
+    total_members: members.length,
+    shares,
+  };
+}
 
-        // 7. Calculate proportional shares
-        const shares = memberSavings.map(member => {
-            const proportion = totalSavings > 0 ? member.member_savings / totalSavings : 0;
-            const shareAmount = proportion * totalFund;
+// GET /api/shareout/preview — look before you distribute
+const preview = wrap(async (req, res) => {
+  const cycle = await getActiveCycle();
+  if (!cycle) return res.status(400).json({ message: 'No saving cycle is running.' });
 
-            return {
-                member_id: member.member_id,
-                full_name: member.full_name,
-                membership_number: member.membership_number,
-                member_savings: parseFloat(member.member_savings),
-                share_amount: parseFloat(shareAmount.toFixed(2))
-            };
-        });
+  const result = await computeShareOut(cycle.id);
 
-        // 8. Record the share-out
-        const [shareOutResult] = await db.query(
-            `INSERT INTO share_out (cycle_id, total_fund, total_members, date_distributed, distributed_by)
-             VALUES (?, ?, ?, CURDATE(), ?)`,
-            [cycle_id || null, totalFund, memberSavings.length, distributed_by]
-        );
+  const openLoans = await one(
+    `SELECT COUNT(*)::int AS c FROM loans WHERE cycle_id = $1 AND status IN ('pending','approved')`, [cycle.id]
+  );
 
-        // Audit log
-        await db.query(
-            `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
-             VALUES (?, 'PERFORM_SHARE_OUT', 'share_out', ?, ?)`,
-            [distributed_by, shareOutResult.insertId, `Total Fund: ${totalFund}`]
-        );
+  res.json({ cycle, ...result, open_loans: openLoans.c });
+});
 
-        res.status(201).json({
-            message: 'Share-out calculated successfully',
-            shareOutId: shareOutResult.insertId,
-            welfare_included: includeWelfare,
-            breakdown: {
-                total_savings: totalSavings,
-                total_interest: totalInterest,
-                total_fines: totalFines,
-                total_welfare: totalWelfare,
-                total_fund: totalFund
-            },
-            total_members: memberSavings.length,
-            shares: shares
-        });
+// POST /api/shareout — save the calculation as a draft
+const createShareOut = wrap(async (req, res) => {
+  const cycle = await getActiveCycle();
+  if (!cycle) return res.status(400).json({ message: 'No saving cycle is running.' });
 
-    } catch (error) {
-        res.status(500).json({ message: 'Error performing share-out', error: error.message });
+  const existing = await one(
+    `SELECT id, status FROM share_out WHERE cycle_id = $1 ORDER BY id DESC LIMIT 1`, [cycle.id]
+  );
+  if (existing && existing.status === 'distributed') {
+    return res.status(400).json({ message: 'This cycle has already been shared out.' });
+  }
+
+  const result = await computeShareOut(cycle.id);
+  if (result.breakdown.total_fund <= 0) {
+    return res.status(400).json({ message: 'There is nothing in the box to share.' });
+  }
+  if (!result.shares.length) {
+    return res.status(400).json({ message: 'There are no active members to share with.' });
+  }
+
+  const b = result.breakdown;
+  const saved = await tx(async (client) => {
+    if (existing) await client.query(`DELETE FROM share_out WHERE id = $1`, [existing.id]);
+
+    const { rows } = await client.query(
+      `INSERT INTO share_out (cycle_id, total_savings, total_interest, total_fines, total_welfare,
+                              total_fund, total_members, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'draft') RETURNING *`,
+      [cycle.id, b.total_savings, b.interest_shared, b.fines_shared, b.welfare_shared,
+       b.total_fund, result.total_members]
+    );
+    const shareOut = rows[0];
+
+    for (const s of result.shares) {
+      await client.query(
+        `INSERT INTO share_out_details (share_out_id, member_id, member_savings, profit_share, deductions, share_amount)
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+        [shareOut.id, s.member_id, s.member_savings, s.profit_share, s.deductions, s.share_amount]
+      );
     }
-};
+    return shareOut;
+  });
 
-// Get all share-out records
-const getAllShareOuts = async (req, res) => {
-    try {
-        const [records] = await db.query(`
-            SELECT id, cycle_id, total_fund, total_members, date_distributed, distributed_by
-            FROM share_out
-            ORDER BY id DESC
-        `);
-        res.json(records);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching share-out records', error: error.message });
-    }
-};
+  await audit(req.user.id, 'CREATE_SHAREOUT', 'share_out', saved.id, `Total fund ${b.total_fund}`);
+  res.status(201).json({ message: 'Share-out calculated and saved as a draft.', share_out: saved, ...result });
+});
 
-// Get details of a specific share-out
-const getShareOutById = async (req, res) => {
-    try {
-        const [record] = await db.query(
-            `SELECT * FROM share_out WHERE id = ?`,
-            [req.params.id]
-        );
+/**
+ * POST /api/shareout/:id/distribute
+ * Hand out the money and text every member her own figure.
+ */
+const distribute = wrap(async (req, res) => {
+  const id = Number(req.params.id);
 
-        if (record.length === 0) {
-            return res.status(404).json({ message: 'Share-out record not found' });
-        }
+  const shareOut = await one(`SELECT * FROM share_out WHERE id = $1`, [id]);
+  if (!shareOut) return res.status(404).json({ message: 'That share-out does not exist.' });
+  if (shareOut.status === 'distributed') {
+    return res.status(400).json({ message: 'This share-out has already been handed out.' });
+  }
 
-        res.json(record[0]);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching share-out', error: error.message });
-    }
-};
+  const lines = await query(
+    `SELECT d.*, d.member_savings::float AS member_savings, d.profit_share::float AS profit_share,
+            d.share_amount::float AS share_amount,
+            u.full_name, u.phone, u.language
+       FROM share_out_details d
+       JOIN members m ON m.id = d.member_id
+       JOIN users u ON u.id = m.user_id
+      WHERE d.share_out_id = $1
+      ORDER BY u.full_name`,
+    [id]
+  );
 
-module.exports = {
-    performShareOut,
-    getAllShareOuts,
-    getShareOutById
-};
+  await query(
+    `UPDATE share_out SET status = 'distributed', date_distributed = CURRENT_DATE, distributed_by = $2 WHERE id = $1`,
+    [id, req.user.id]
+  );
+
+  // Every woman is told her share is ready and exactly how much it is.
+  let sent = 0;
+  let failed = 0;
+  for (const line of lines) {
+    const result = await sendSMS(
+      line.phone,
+      build('shareOutReady', line.language, {
+        name: line.full_name, amount: line.share_amount,
+        savings: line.member_savings, profit: line.profit_share,
+      }),
+      { name: line.full_name, category: 'shareout', isBroadcast: true, sentBy: req.user.id }
+    );
+    if (result.ok) { sent++; await query(`UPDATE share_out_details SET notified = TRUE WHERE id = $1`, [line.id]); }
+    else failed++;
+    await new Promise((r) => setTimeout(r, 350));
+  }
+
+  await audit(req.user.id, 'DISTRIBUTE_SHAREOUT', 'share_out', id,
+    `${lines.length} member(s), ${sent} notified`);
+
+  res.json({
+    message: `Share-out handed out. ${sent} of ${lines.length} member(s) were texted.`,
+    notified: { sent, failed, total: lines.length },
+  });
+});
+
+// GET /api/shareout
+const listShareOuts = wrap(async (req, res) => {
+  const rows = await query(
+    `SELECT so.*, so.total_fund::float AS total_fund, so.total_savings::float AS total_savings,
+            c.cycle_name, u.full_name AS distributed_by_name
+       FROM share_out so
+       LEFT JOIN cycles c ON c.id = so.cycle_id
+       LEFT JOIN users u ON u.id = so.distributed_by
+      ORDER BY so.id DESC`
+  );
+  res.json(rows);
+});
+
+// GET /api/shareout/:id
+const getShareOut = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const shareOut = await one(
+    `SELECT so.*, c.cycle_name, u.full_name AS distributed_by_name
+       FROM share_out so LEFT JOIN cycles c ON c.id = so.cycle_id
+       LEFT JOIN users u ON u.id = so.distributed_by WHERE so.id = $1`, [id]
+  );
+  if (!shareOut) return res.status(404).json({ message: 'That share-out does not exist.' });
+
+  const params = [id];
+  let filter = '';
+  if (req.user.role === 'member') { params.push(req.user.member_id); filter = `AND d.member_id = $2`; }
+
+  const details = await query(
+    `SELECT d.*, d.member_savings::float AS member_savings, d.profit_share::float AS profit_share,
+            d.deductions::float AS deductions, d.share_amount::float AS share_amount,
+            u.full_name, m.membership_number
+       FROM share_out_details d
+       JOIN members m ON m.id = d.member_id
+       JOIN users u ON u.id = m.user_id
+      WHERE d.share_out_id = $1 ${filter}
+      ORDER BY u.full_name`,
+    params
+  );
+  res.json({ share_out: shareOut, details });
+});
+
+// GET /api/shareout/mine — what the logged-in member is owed
+const myShare = wrap(async (req, res) => {
+  if (!req.user.member_id) return res.json(null);
+  const row = await one(
+    `SELECT d.member_savings::float AS member_savings, d.profit_share::float AS profit_share,
+            d.deductions::float AS deductions, d.share_amount::float AS share_amount, d.notified,
+            so.status, so.date_distributed, c.cycle_name
+       FROM share_out_details d
+       JOIN share_out so ON so.id = d.share_out_id
+       LEFT JOIN cycles c ON c.id = so.cycle_id
+      WHERE d.member_id = $1 ORDER BY so.id DESC LIMIT 1`,
+    [req.user.member_id]
+  );
+  res.json(row);
+});
+
+module.exports = { preview, createShareOut, distribute, listShareOuts, getShareOut, myShare };

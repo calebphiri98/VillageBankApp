@@ -1,124 +1,88 @@
-const db = require('../config/db');
+const { query, one } = require('../config/db');
+const { wrap } = require('../middleware/errorHandler');
+const { audit } = require('../utils/audit');
+const { getActiveCycle } = require('../utils/helpers');
 
-// Create a new cycle
-const createCycle = async (req, res) => {
-    const { cycle_name, start_date, end_date } = req.body;
-    const created_by = req.user.id;
+// GET /api/cycles
+const listCycles = wrap(async (req, res) => {
+  const rows = await query(
+    `SELECT c.*, c.share_value::float AS share_value,
+            COALESCE((SELECT SUM(s.amount) FROM savings s WHERE s.cycle_id = c.id), 0)::float AS total_savings
+       FROM cycles c ORDER BY c.start_date DESC`
+  );
+  res.json(rows);
+});
 
-    try {
-        if (!cycle_name || !start_date) {
-            return res.status(400).json({ message: 'Cycle name and start date are required' });
-        }
+// GET /api/cycles/active
+const activeCycle = wrap(async (req, res) => {
+  const cycle = await getActiveCycle();
+  if (!cycle) return res.json(null);
 
-        const [result] = await db.query(
-            `INSERT INTO cycles (cycle_name, start_date, end_date, status)
-             VALUES (?, ?, ?, 'active')`,
-            [cycle_name, start_date, end_date || null]
-        );
+  const start = new Date(cycle.start_date);
+  const end = new Date(cycle.end_date);
+  const now = new Date();
+  const totalDays = Math.max(1, Math.round((end - start) / 86400000));
+  const elapsed = Math.min(totalDays, Math.max(0, Math.round((now - start) / 86400000)));
 
-        // Audit log
-        await db.query(
-            `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
-             VALUES (?, 'CREATE_CYCLE', 'cycles', ?, ?)`,
-            [created_by, result.insertId, `Cycle: ${cycle_name}`]
-        );
+  res.json({
+    ...cycle,
+    share_value: Number(cycle.share_value),
+    total_days: totalDays,
+    days_elapsed: elapsed,
+    days_remaining: Math.max(0, totalDays - elapsed),
+    progress: Math.round((elapsed / totalDays) * 100),
+  });
+});
 
-        res.status(201).json({
-            message: 'Cycle created successfully',
-            cycleId: result.insertId
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Error creating cycle', error: error.message });
-    }
-};
+// POST /api/cycles
+const createCycle = wrap(async (req, res) => {
+  const { cycle_name, start_date, end_date, share_value } = req.body;
+  if (!cycle_name || !start_date) {
+    return res.status(400).json({ message: 'Give the cycle a name and a start date.' });
+  }
 
-// Get all cycles
-const getAllCycles = async (req, res) => {
-    try {
-        const [cycles] = await db.query(`
-            SELECT id, cycle_name, start_date, end_date, status, created_at
-            FROM cycles
-            ORDER BY id DESC
-        `);
-        res.json(cycles);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching cycles', error: error.message });
-    }
-};
+  // A saving period runs one year unless the group says otherwise.
+  const start = new Date(start_date);
+  const end = end_date ? new Date(end_date) : new Date(new Date(start).setFullYear(start.getFullYear() + 1));
+  if (end <= start) return res.status(400).json({ message: 'The end date must come after the start date.' });
 
-// Get the current active cycle
-const getActiveCycle = async (req, res) => {
-    try {
-        const [cycles] = await db.query(`
-            SELECT id, cycle_name, start_date, end_date, status
-            FROM cycles
-            WHERE status = 'active'
-            ORDER BY id DESC
-            LIMIT 1
-        `);
+  const open = await getActiveCycle();
+  if (open) return res.status(400).json({ message: `"${open.cycle_name}" is still running. Close it before starting a new one.` });
 
-        if (cycles.length === 0) {
-            return res.status(404).json({ message: 'No active cycle found' });
-        }
+  const row = await one(
+    `INSERT INTO cycles (cycle_name, start_date, end_date, share_value)
+     VALUES ($1,$2,$3,$4) RETURNING *`,
+    [cycle_name, start.toISOString().slice(0, 10), end.toISOString().slice(0, 10), share_value || 1000]
+  );
 
-        res.json(cycles[0]);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching active cycle', error: error.message });
-    }
-};
+  await audit(req.user.id, 'CREATE_CYCLE', 'cycles', row.id, cycle_name);
+  res.status(201).json({ message: `Cycle "${cycle_name}" started.`, cycle: row });
+});
 
-// Close a cycle
-const closeCycle = async (req, res) => {
-    const cycleId = req.params.id;
-    const closed_by = req.user.id;
+// PATCH /api/cycles/:id/close
+const closeCycle = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const cycle = await one(`SELECT * FROM cycles WHERE id = $1`, [id]);
+  if (!cycle) return res.status(404).json({ message: 'That cycle does not exist.' });
+  if (cycle.status === 'completed') return res.status(400).json({ message: 'That cycle is already closed.' });
 
-    try {
-        const [result] = await db.query(
-            `UPDATE cycles 
-             SET status = 'completed', end_date = CURDATE()
-             WHERE id = ? AND status = 'active'`,
-            [cycleId]
-        );
+  const openLoans = await one(
+    `SELECT COUNT(*)::int AS c FROM loans WHERE cycle_id = $1 AND status IN ('pending','approved')`, [id]
+  );
+  if (openLoans.c > 0) {
+    return res.status(400).json({ message: `${openLoans.c} loan(s) are still open in this cycle. Settle them first.` });
+  }
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Active cycle not found' });
-        }
+  const distributed = await one(
+    `SELECT id FROM share_out WHERE cycle_id = $1 AND status = 'distributed' LIMIT 1`, [id]
+  );
+  if (!distributed) {
+    return res.status(400).json({ message: 'Do the share-out before closing the cycle.' });
+  }
 
-        // Audit log
-        await db.query(
-            `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
-             VALUES (?, 'CLOSE_CYCLE', 'cycles', ?, 'Cycle closed')`,
-            [closed_by, cycleId]
-        );
+  await query(`UPDATE cycles SET status = 'completed' WHERE id = $1`, [id]);
+  await audit(req.user.id, 'CLOSE_CYCLE', 'cycles', id, cycle.cycle_name);
+  res.json({ message: `Cycle "${cycle.cycle_name}" is closed.` });
+});
 
-        res.json({ message: 'Cycle closed successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error closing cycle', error: error.message });
-    }
-};
-
-// Get a specific cycle
-const getCycleById = async (req, res) => {
-    try {
-        const [cycles] = await db.query(
-            `SELECT id, cycle_name, start_date, end_date, status FROM cycles WHERE id = ?`,
-            [req.params.id]
-        );
-
-        if (cycles.length === 0) {
-            return res.status(404).json({ message: 'Cycle not found' });
-        }
-
-        res.json(cycles[0]);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching cycle', error: error.message });
-    }
-};
-
-module.exports = {
-    createCycle,
-    getAllCycles,
-    getActiveCycle,
-    closeCycle,
-    getCycleById
-};
+module.exports = { listCycles, activeCycle, createCycle, closeCycle };

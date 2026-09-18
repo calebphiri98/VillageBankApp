@@ -1,130 +1,91 @@
-const db = require('../config/db');
+const { query, one } = require('../config/db');
+const { wrap } = require('../middleware/errorHandler');
+const { sendSMS } = require('../utils/sms');
+const { build } = require('../utils/messages');
+const { audit } = require('../utils/audit');
+const { getActiveCycle } = require('../utils/helpers');
 
-// Record a fine
-const recordFine = async (req, res) => {
-    const { member_id, amount, reason, date } = req.body;
-    const recorded_by = req.user.id;
+// POST /api/fines
+const recordFine = wrap(async (req, res) => {
+  const { member_id, amount, reason, date, paid } = req.body;
+  if (!member_id || !amount || Number(amount) <= 0) {
+    return res.status(400).json({ message: 'Choose a member and enter an amount above zero.' });
+  }
 
-    try {
-        if (!member_id || !amount || amount <= 0) {
-            return res.status(400).json({ message: 'Member ID and a valid amount are required' });
-        }
+  const member = await one(
+    `SELECT m.id, u.full_name, u.phone, u.language
+       FROM members m JOIN users u ON u.id = m.user_id
+      WHERE m.id = $1 AND m.status = 'active'`,
+    [member_id]
+  );
+  if (!member) return res.status(404).json({ message: 'That member is not active.' });
 
-        // Get member details
-        const [member] = await db.query(
-            `SELECT m.id, u.full_name, u.phone 
-             FROM members m 
-             JOIN users u ON m.user_id = u.id 
-             WHERE m.id = ? AND m.status = 'active'`,
-            [member_id]
-        );
+  const cycle = await getActiveCycle();
+  const fine = await one(
+    `INSERT INTO fines (member_id, cycle_id, amount, reason, paid, date, recorded_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id, amount::float, date`,
+    [member_id, cycle ? cycle.id : null, amount, reason || null, !!paid,
+     date || new Date().toISOString().slice(0, 10), req.user.id]
+  );
 
-        if (member.length === 0) {
-            return res.status(404).json({ message: 'Active member not found' });
-        }
+  await audit(req.user.id, 'RECORD_FINE', 'fines', fine.id, `${member.full_name}: ${amount} — ${reason || 'no reason given'}`);
 
-        const [result] = await db.query(
-            `INSERT INTO fines (member_id, amount, reason, date, recorded_by)
-             VALUES (?, ?, ?, ?, ?)`,
-            [member_id, amount, reason || null, date || new Date(), recorded_by]
-        );
+  const sms = await sendSMS(
+    member.phone,
+    build('fineRecorded', member.language, { name: member.full_name, amount, reason, date: fine.date }),
+    { name: member.full_name, category: 'fine', sentBy: req.user.id }
+  );
 
-        // Audit log
-        await db.query(
-            `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
-             VALUES (?, 'RECORD_FINE', 'fines', ?, ?)`,
-            [recorded_by, result.insertId, `Amount: ${amount}, Reason: ${reason || 'N/A'}`]
-        );
+  res.status(201).json({ message: `Fine recorded for ${member.full_name}.`, fine, sms_sent: sms.ok });
+});
 
-        // ===== AUTOMATIC SMS =====
-        if (member[0].phone) {
-            const { sendSMS } = require('../utils/smsService');
-            const message = `Dear ${member[0].full_name}, a fine of MWK ${amount} has been recorded. Reason: ${reason || 'Not specified'}. - Manase VSLA`;
-            await sendSMS(member[0].phone, message, recorded_by);
-        }
+// GET /api/fines
+const listFines = wrap(async (req, res) => {
+  const params = [];
+  const where = [];
+  if (req.user.role === 'member') { params.push(req.user.member_id); where.push(`f.member_id = $${params.length}`); }
+  else if (req.query.member_id) { params.push(req.query.member_id); where.push(`f.member_id = $${params.length}`); }
 
-        res.status(201).json({
-            message: 'Fine recorded successfully',
-            fineId: result.insertId
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Error recording fine', error: error.message });
-    }
-};
+  const rows = await query(
+    `SELECT f.id, f.amount::float, f.reason, f.paid, f.date, f.member_id,
+            m.membership_number, u.full_name
+       FROM fines f JOIN members m ON m.id = f.member_id JOIN users u ON u.id = m.user_id
+      ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      ORDER BY f.date DESC, f.id DESC`,
+    params
+  );
+  res.json(rows);
+});
 
-// Get all fines
-const getAllFines = async (req, res) => {
-    try {
-        const [fines] = await db.query(`
-            SELECT f.id, f.amount, f.reason, f.date,
-                   m.membership_number, u.full_name
-            FROM fines f
-            JOIN members m ON f.member_id = m.id
-            JOIN users u ON m.user_id = u.id
-            ORDER BY f.date DESC
-        `);
-        res.json(fines);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching fines', error: error.message });
-    }
-};
+// PATCH /api/fines/:id/pay
+const markPaid = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const updated = await one(`UPDATE fines SET paid = TRUE WHERE id = $1 RETURNING id, amount::float`, [id]);
+  if (!updated) return res.status(404).json({ message: 'That fine is not in the book.' });
+  await audit(req.user.id, 'FINE_PAID', 'fines', id, `Amount ${updated.amount}`);
+  res.json({ message: 'Fine marked as paid.' });
+});
 
-// Get fines of a specific member
-const getMemberFines = async (req, res) => {
-    try {
-        const [fines] = await db.query(`
-            SELECT id, amount, reason, date
-            FROM fines
-            WHERE member_id = ?
-            ORDER BY date DESC
-        `, [req.params.memberId]);
+// DELETE /api/fines/:id
+const deleteFine = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const existing = await one(`SELECT * FROM fines WHERE id = $1`, [id]);
+  if (!existing) return res.status(404).json({ message: 'That fine is not in the book.' });
+  await query(`DELETE FROM fines WHERE id = $1`, [id]);
+  await audit(req.user.id, 'DELETE_FINE', 'fines', id, `Removed ${existing.amount}`);
+  res.json({ message: 'Fine removed.' });
+});
 
-        res.json(fines);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching member fines', error: error.message });
-    }
-};
+// GET /api/fines/summary
+const finesSummary = wrap(async (req, res) => {
+  const row = await one(
+    `SELECT COALESCE(SUM(amount),0)::float AS total,
+            COALESCE(SUM(CASE WHEN paid THEN amount ELSE 0 END),0)::float AS collected,
+            COALESCE(SUM(CASE WHEN NOT paid THEN amount ELSE 0 END),0)::float AS outstanding,
+            COUNT(*)::int AS count
+       FROM fines`
+  );
+  res.json(row);
+});
 
-// Get total fines
-const getTotalFines = async (req, res) => {
-    try {
-        const [result] = await db.query(`
-            SELECT COALESCE(SUM(amount), 0) as total_fines FROM fines
-        `);
-        res.json(result[0]);
-    } catch (error) {
-        res.status(500).json({ message: 'Error calculating total fines', error: error.message });
-    }
-};
-
-// Delete a fine (optional - for corrections)
-const deleteFine = async (req, res) => {
-    const fineId = req.params.id;
-    const deleted_by = req.user.id;
-
-    try {
-        const [result] = await db.query(`DELETE FROM fines WHERE id = ?`, [fineId]);
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Fine not found' });
-        }
-
-        await db.query(
-            `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
-             VALUES (?, 'DELETE_FINE', 'fines', ?, 'Fine deleted')`,
-            [deleted_by, fineId]
-        );
-
-        res.json({ message: 'Fine deleted successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error deleting fine', error: error.message });
-    }
-};
-
-module.exports = {
-    recordFine,
-    getAllFines,
-    getMemberFines,
-    getTotalFines,
-    deleteFine
-};
+module.exports = { recordFine, listFines, markPaid, deleteFine, finesSummary };

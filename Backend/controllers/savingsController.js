@@ -1,166 +1,142 @@
-const db = require('../config/db');
+const { query, one } = require('../config/db');
+const { wrap } = require('../middleware/errorHandler');
+const { sendSMS } = require('../utils/sms');
+const { build } = require('../utils/messages');
+const { audit } = require('../utils/audit');
+const { getActiveCycle } = require('../utils/helpers');
 
-const recordSaving = async (req, res) => {
-    const { member_id, amount, date, cycle_id } = req.body;
-    const recorded_by = req.user.id;
+// POST /api/savings — treasurer or secretary records money handed over at the meeting
+const recordSaving = wrap(async (req, res) => {
+  const { member_id, amount, shares, date, note } = req.body;
+  const recordedBy = req.user.id;
 
-    try {
-        if (!member_id || !amount || amount <= 0) {
-            return res.status(400).json({ message: 'Member ID and a valid amount (greater than 0) are required' });
-        }
+  if (!member_id || !amount || Number(amount) <= 0) {
+    return res.status(400).json({ message: 'Choose a member and enter an amount above zero.' });
+  }
 
-        // Check if member exists and is active
-        const [member] = await db.query(
-            `SELECT m.id, u.full_name, u.phone 
-             FROM members m 
-             JOIN users u ON m.user_id = u.id 
-             WHERE m.id = ? AND m.status = 'active'`,
-            [member_id]
-        );
+  const member = await one(
+    `SELECT m.id, u.id AS user_id, u.full_name, u.phone, u.language
+       FROM members m JOIN users u ON u.id = m.user_id
+      WHERE m.id = $1 AND m.status = 'active'`,
+    [member_id]
+  );
+  if (!member) return res.status(404).json({ message: 'That member is not active.' });
 
-        if (member.length === 0) {
-            return res.status(404).json({ message: 'Active member not found' });
-        }
+  const cycle = await getActiveCycle();
+  if (!cycle) return res.status(400).json({ message: 'No saving cycle is running. Start one first.' });
 
-        const [result] = await db.query(
-            `INSERT INTO savings (member_id, cycle_id, amount, date, recorded_by) 
-             VALUES (?, ?, ?, ?, ?)`,
-            [member_id, cycle_id || null, amount, date || new Date(), recorded_by]
-        );
+  const saving = await one(
+    `INSERT INTO savings (member_id, cycle_id, amount, shares, date, note, recorded_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id, amount::float, date`,
+    [member_id, cycle.id, amount, shares || 1, date || new Date().toISOString().slice(0, 10), note || null, recordedBy]
+  );
 
-        // Audit log
-        await db.query(
-            `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details) 
-             VALUES (?, 'RECORD_SAVING', 'savings', ?, ?)`,
-            [recorded_by, result.insertId, `Amount: ${amount}`]
-        );
+  const totals = await one(
+    `SELECT COALESCE(SUM(amount),0)::float AS total FROM savings WHERE member_id = $1 AND cycle_id = $2`,
+    [member_id, cycle.id]
+  );
 
-        // ===== AUTOMATIC SMS =====
-        if (member[0].phone) {
-            const { sendSMS } = require('../utils/smsService');
-            const message = `Dear ${member[0].full_name}, your savings of MWK ${amount} has been recorded successfully. - Manase VSLA`;
-            await sendSMS(member[0].phone, message, recorded_by);
-        }
+  await audit(recordedBy, 'RECORD_SAVING', 'savings', saving.id,
+    `${member.full_name}: ${amount}`);
 
-        res.status(201).json({ 
-            message: 'Savings recorded successfully', 
-            savingId: result.insertId 
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Error recording savings', error: error.message });
-    }
-};
+  // She gets a receipt on her own phone, in her own language.
+  const sms = await sendSMS(
+    member.phone,
+    build('savingRecorded', member.language, {
+      name: member.full_name, amount, date: saving.date, total: totals.total,
+    }),
+    { name: member.full_name, category: 'saving', sentBy: recordedBy }
+  );
 
-// Get all savings
-const getAllSavings = async (req, res) => {
-    try {
-        const [savings] = await db.query(`
-            SELECT s.id, s.amount, s.date, s.cycle_id,
-                   m.membership_number, u.full_name, u.phone
-            FROM savings s
-            JOIN members m ON s.member_id = m.id
-            JOIN users u ON m.user_id = u.id
-            ORDER BY s.date DESC
-        `);
-        res.json(savings);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching savings', error: error.message });
-    }
-};
+  res.status(201).json({
+    message: `Saving recorded for ${member.full_name}.`,
+    saving, member_total: totals.total, sms_sent: sms.ok, sms_error: sms.ok ? null : sms.error,
+  });
+});
 
-// Get savings of a specific member
-const getMemberSavings = async (req, res) => {
-    try {
-        const [savings] = await db.query(`
-            SELECT s.id, s.amount, s.date, s.cycle_id
-            FROM savings s
-            WHERE s.member_id = ?
-            ORDER BY s.date DESC
-        `, [req.params.memberId]);
+// GET /api/savings
+const listSavings = wrap(async (req, res) => {
+  const { cycle_id, member_id, limit = 200 } = req.query;
+  const where = [];
+  const params = [];
 
-        res.json(savings);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching member savings', error: error.message });
-    }
-};
+  if (cycle_id) { params.push(cycle_id); where.push(`s.cycle_id = $${params.length}`); }
+  if (member_id) { params.push(member_id); where.push(`s.member_id = $${params.length}`); }
+  params.push(Math.min(Number(limit) || 200, 1000));
 
-// Get total group savings
-const getTotalSavings = async (req, res) => {
-    try {
-        const [result] = await db.query(`SELECT SUM(amount) AS total_savings FROM savings`);
-        res.json({ total_savings: result[0].total_savings || 0 });
-    } catch (error) {
-        res.status(500).json({ message: 'Error calculating total savings', error: error.message });
-    }
-};
+  const rows = await query(
+    `SELECT s.id, s.amount::float, s.shares, s.date, s.note, s.member_id, s.cycle_id,
+            m.membership_number, u.full_name, r.full_name AS recorded_by_name
+       FROM savings s
+       JOIN members m ON m.id = s.member_id
+       JOIN users u ON u.id = m.user_id
+       LEFT JOIN users r ON r.id = s.recorded_by
+      ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      ORDER BY s.date DESC, s.id DESC
+      LIMIT $${params.length}`,
+    params
+  );
+  res.json(rows);
+});
 
-// Update a saving
-const updateSaving = async (req, res) => {
-    const { amount, date, cycle_id } = req.body;
-    const savingId = req.params.id;
-    const updated_by = req.user.id;
+// GET /api/savings/summary
+const savingsSummary = wrap(async (req, res) => {
+  const cycle = await getActiveCycle();
+  const totals = await one(
+    `SELECT COALESCE(SUM(amount),0)::float AS total_savings,
+            COUNT(*)::int AS entries,
+            COUNT(DISTINCT member_id)::int AS savers
+       FROM savings WHERE ($1::int IS NULL OR cycle_id = $1)`,
+    [cycle ? cycle.id : null]
+  );
+  const perMember = await query(
+    `SELECT m.id AS member_id, u.full_name, m.membership_number,
+            COALESCE(SUM(s.amount),0)::float AS total_savings,
+            COALESCE(SUM(s.shares),0)::int AS total_shares
+       FROM members m
+       JOIN users u ON u.id = m.user_id
+       LEFT JOIN savings s ON s.member_id = m.id AND ($1::int IS NULL OR s.cycle_id = $1)
+      WHERE m.status = 'active'
+      GROUP BY m.id, u.full_name, m.membership_number
+      ORDER BY total_savings DESC`,
+    [cycle ? cycle.id : null]
+  );
+  res.json({ cycle, ...totals, per_member: perMember });
+});
 
-    try {
-        if (amount !== undefined && amount <= 0) {
-            return res.status(400).json({ message: 'Amount must be greater than 0' });
-        }
+// PATCH /api/savings/:id — corrections, admin and treasurer only
+const updateSaving = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const { amount, date, note } = req.body;
 
-        const [result] = await db.query(
-            `UPDATE savings 
-             SET amount = COALESCE(?, amount),
-                 date = COALESCE(?, date),
-                 cycle_id = COALESCE(?, cycle_id)
-             WHERE id = ?`,
-            [amount, date, cycle_id, savingId]
-        );
+  if (amount !== undefined && Number(amount) <= 0) {
+    return res.status(400).json({ message: 'The amount must be above zero.' });
+  }
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Saving record not found' });
-        }
+  const existing = await one(`SELECT * FROM savings WHERE id = $1`, [id]);
+  if (!existing) return res.status(404).json({ message: 'That entry is not in the book.' });
 
-        // Audit log
-        await db.query(
-            `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details) 
-             VALUES (?, 'UPDATE_SAVING', 'savings', ?, ?)`,
-            [updated_by, savingId, `Updated amount/date`]
-        );
+  await query(
+    `UPDATE savings SET amount = COALESCE($2, amount), date = COALESCE($3, date), note = COALESCE($4, note)
+      WHERE id = $1`,
+    [id, amount ?? null, date ?? null, note ?? null]
+  );
 
-        res.json({ message: 'Saving updated successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error updating saving', error: error.message });
-    }
-};
+  await audit(req.user.id, 'UPDATE_SAVING', 'savings', id,
+    `was ${existing.amount}, now ${amount ?? existing.amount}`);
+  res.json({ message: 'Entry corrected.' });
+});
 
-// Delete a saving (hard delete for now + audit)
-const deleteSaving = async (req, res) => {
-    const savingId = req.params.id;
-    const deleted_by = req.user.id;
+// DELETE /api/savings/:id
+const deleteSaving = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const existing = await one(`SELECT * FROM savings WHERE id = $1`, [id]);
+  if (!existing) return res.status(404).json({ message: 'That entry is not in the book.' });
 
-    try {
-        const [result] = await db.query(`DELETE FROM savings WHERE id = ?`, [savingId]);
+  await query(`DELETE FROM savings WHERE id = $1`, [id]);
+  await audit(req.user.id, 'DELETE_SAVING', 'savings', id,
+    `Removed ${existing.amount} for member ${existing.member_id}`);
+  res.json({ message: 'Entry removed.' });
+});
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Saving record not found' });
-        }
-
-        // Audit log
-        await db.query(
-            `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details) 
-             VALUES (?, 'DELETE_SAVING', 'savings', ?, 'Saving deleted')`,
-            [deleted_by, savingId]
-        );
-
-        res.json({ message: 'Saving deleted successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error deleting saving', error: error.message });
-    }
-};
-
-module.exports = {
-    recordSaving,
-    getAllSavings,
-    getMemberSavings,
-    getTotalSavings,
-    updateSaving,
-    deleteSaving
-};
+module.exports = { recordSaving, listSavings, savingsSummary, updateSaving, deleteSaving };

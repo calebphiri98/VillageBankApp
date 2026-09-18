@@ -1,168 +1,67 @@
-const db = require('../config/db');
-const bcrypt = require('bcryptjs');
+const { query, one } = require('../config/db');
+const { wrap } = require('../middleware/errorHandler');
 
-// Get all members
-const getAllMembers = async (req, res) => {
-    try {
-        const [members] = await db.query(`
-            SELECT m.id, m.membership_number, m.date_joined, m.status, 
-                   u.full_name, u.phone, u.role 
-            FROM members m 
-            LEFT JOIN users u ON m.user_id = u.id
-            ORDER BY m.id ASC
-        `);
-        res.json(members);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching members', error: error.message });
-    }
-};
+const MEMBER_SUMMARY = `
+  SELECT m.id, m.membership_number, m.date_joined, m.status, m.village, m.address,
+         m.next_of_kin, m.next_of_kin_phone,
+         u.id AS user_id, u.full_name, u.phone, u.username, u.role, u.language, u.is_active,
+         COALESCE((SELECT SUM(s.amount) FROM savings s WHERE s.member_id = m.id), 0)::float AS total_savings,
+         COALESCE((SELECT SUM(s.shares) FROM savings s WHERE s.member_id = m.id), 0)::int   AS total_shares,
+         COALESCE((SELECT SUM(f.amount) FROM fines f WHERE f.member_id = m.id AND f.paid = FALSE), 0)::float AS unpaid_fines,
+         (SELECT COUNT(*)::int FROM loans l WHERE l.member_id = m.id AND l.status = 'approved') AS active_loans
+    FROM members m
+    JOIN users u ON u.id = m.user_id
+`;
 
-// Get single member by ID
-const getMemberById = async (req, res) => {
-    try {
-        const [member] = await db.query(`
-            SELECT m.*, u.full_name, u.phone, u.role 
-            FROM members m 
-            LEFT JOIN users u ON m.user_id = u.id 
-            WHERE m.id = ?
-        `, [req.params.id]);
-        
-        if (member.length === 0) {
-            return res.status(404).json({ message: 'Member not found' });
-        }
-        res.json(member[0]);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching member', error: error.message });
-    }
-};
+// GET /api/members
+const listMembers = wrap(async (req, res) => {
+  const includeInactive = String(req.query.all) === 'true';
+  const rows = await query(
+    `${MEMBER_SUMMARY} ${includeInactive ? '' : "WHERE m.status = 'active'"} ORDER BY u.full_name`
+  );
+  res.json(rows);
+});
 
-// Create new member with proper username + temporary password
-const createMember = async (req, res) => {
-    const { membership_number, date_joined, full_name, phone, role = 'member' } = req.body;
+// GET /api/members/:id
+const getMember = wrap(async (req, res) => {
+  const id = Number(req.params.id);
 
-    try {
-        if (!membership_number || !full_name || !phone) {
-            return res.status(400).json({
-                message: 'Membership number, full name, and phone are required'
-            });
-        }
+  // A plain member may only look at her own record.
+  if (req.user.role === 'member' && req.user.member_id !== id) {
+    return res.status(403).json({ message: 'You can only view your own record.' });
+  }
 
-        // Generate username from full name: "Grace Banda" -> "grace.banda"
-        let baseUsername = full_name
-            .toLowerCase()
-            .trim()
-            .replace(/[^a-z0-9\s]/g, '')
-            .replace(/\s+/g, '.');
+  const member = await one(`${MEMBER_SUMMARY} WHERE m.id = $1`, [id]);
+  if (!member) return res.status(404).json({ message: 'That member is not on the list.' });
 
-        if (!baseUsername) {
-            baseUsername = 'member' + Date.now();
-        }
+  const [savings, loans, fines, attendance] = await Promise.all([
+    query(`SELECT id, amount::float, shares, date, note FROM savings WHERE member_id = $1 ORDER BY date DESC, id DESC`, [id]),
+    query(
+      `SELECT l.id, l.amount::float, l.with_interest, l.interest_rate::float, l.status, l.due_date, l.purpose,
+              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id), 0)::float AS total_repaid
+         FROM loans l WHERE l.member_id = $1 ORDER BY l.id DESC`, [id]),
+    query(`SELECT id, amount::float, reason, paid, date FROM fines WHERE member_id = $1 ORDER BY date DESC`, [id]),
+    query(
+      `SELECT a.status, mt.meeting_date FROM attendance a
+         JOIN meetings mt ON mt.id = a.meeting_id
+        WHERE a.member_id = $1 ORDER BY mt.meeting_date DESC LIMIT 12`, [id]),
+  ]);
 
-        // Ensure username is unique
-        let username = baseUsername;
-        let counter = 2;
-        while (true) {
-            const [existing] = await db.query(
-                'SELECT id FROM users WHERE username = ?',
-                [username]
-            );
-            if (existing.length === 0) break;
-            username = `${baseUsername}${counter}`;
-            counter++;
-        }
+  const loansWithBalance = loans.map((l) => {
+    const interest = l.with_interest ? +((l.amount * l.interest_rate) / 100).toFixed(2) : 0;
+    const totalDue = +(l.amount + interest).toFixed(2);
+    return { ...l, interest_amount: interest, total_due: totalDue,
+             outstanding: Math.max(0, +(totalDue - l.total_repaid).toFixed(2)) };
+  });
 
-        // Temporary password
-        const tempPassword = 'Manase@123';
-        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+  res.json({ member, savings, loans: loansWithBalance, fines, attendance });
+});
 
-        // Create user account
-        const [userResult] = await db.query(
-            `INSERT INTO users (username, password, role, full_name, phone)
-             VALUES (?, ?, ?, ?, ?)`,
-            [username, hashedPassword, role, full_name, phone]
-        );
+// GET /api/members/me — shortcut for the logged-in woman
+const getMyRecord = wrap(async (req, res) => {
+  if (!req.user.member_id) return res.status(404).json({ message: 'You do not have a member record yet.' });
+  req.params.id = String(req.user.member_id);
+  return getMember(req, res);
+});
 
-        // Create member record
-        const [memberResult] = await db.query(
-            `INSERT INTO members (user_id, membership_number, date_joined, status)
-             VALUES (?, ?, ?, 'active')`,
-            [userResult.insertId, membership_number, date_joined || new Date()]
-        );
-
-        // Simulate / attempt SMS with login details
-        try {
-            const { sendSMS } = require('../utils/smsService');
-            const smsMessage =
-                `Welcome to Manase VSLA.\n` +
-                `Username: ${username}\n` +
-                `Temporary Password: ${tempPassword}\n` +
-                `Please login and change your password.\n` +
-                `- Manase VSLA`;
-
-            await sendSMS(phone, smsMessage);
-        } catch (smsError) {
-            console.error('SMS send failed (member still created):', smsError.message);
-        }
-
-        res.status(201).json({
-            message: 'Member created successfully',
-            memberId: memberResult.insertId,
-            username,
-            temporaryPassword: tempPassword,
-            note: 'Share these login details with the member. SMS also logged/simulated.'
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Error creating member', error: error.message });
-    }
-};
-
-// Update member
-const updateMember = async (req, res) => {
-    const { full_name, phone, status, date_joined, role } = req.body;
-    const memberId = req.params.id;
-
-    try {
-        await db.query(
-            `UPDATE users u 
-             JOIN members m ON u.id = m.user_id 
-             SET u.full_name = ?, u.phone = ?, u.role = COALESCE(?, u.role)
-             WHERE m.id = ?`,
-            [full_name, phone, role, memberId]
-        );
-
-        await db.query(
-            `UPDATE members 
-             SET status = ?, date_joined = ? 
-             WHERE id = ?`,
-            [status || 'active', date_joined, memberId]
-        );
-
-        res.json({ message: 'Member updated successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error updating member', error: error.message });
-    }
-};
-
-// Delete member (soft delete / deactivate)
-const deleteMember = async (req, res) => {
-    const memberId = req.params.id;
-
-    try {
-        await db.query(
-            `UPDATE members SET status = 'inactive' WHERE id = ?`,
-            [memberId]
-        );
-
-        res.json({ message: 'Member deactivated successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error deleting member', error: error.message });
-    }
-};
-
-module.exports = { 
-    getAllMembers, 
-    getMemberById, 
-    createMember, 
-    updateMember, 
-    deleteMember 
-};
+module.exports = { listMembers, getMember, getMyRecord };
