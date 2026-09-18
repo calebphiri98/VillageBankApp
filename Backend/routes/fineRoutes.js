@@ -1,46 +1,12 @@
-const express = require('express');
-const router = express.Router();
-const { 
-    recordFine, 
-    getAllFines, 
-    getMemberFines, 
-    getTotalFines, 
-    deleteFine 
-} = require('../controllers/fineController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const router = require('express').Router();
+const c = require('../controllers/fineController');
+const { protect, authorize, committee } = require('../middleware/auth');
 
-// Record a fine
-router.post('/', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    recordFine
-);
-
-// Get all fines
-router.get('/', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    getAllFines
-);
-
-// Get total fines
-router.get('/total', 
-    protect, 
-    getTotalFines
-);
-
-// Get fines of a specific member
-router.get('/member/:memberId', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
-    getMemberFines
-);
-
-// Delete a fine
-router.delete('/:id', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    deleteFine
-);
+router.use(protect);
+router.get('/', c.listFines);
+router.get('/summary', committee(), c.finesSummary);
+router.post('/', committee(), c.recordFine);
+router.patch('/:id/pay', committee(), c.markPaid);
+router.delete('/:id', authorize('admin'), c.deleteFine);
 
 module.exports = router;

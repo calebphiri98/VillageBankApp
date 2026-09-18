@@ -1,20 +1,10 @@
-const express = require('express');
-const router = express.Router();
-const { sendTestSMS, getSMSHistory } = require('../controllers/smsController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const router = require('express').Router();
+const c = require('../controllers/smsController');
+const { protect, committee } = require('../middleware/auth');
 
-// Send a test SMS
-router.post('/send', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    sendTestSMS
-);
-
-// Get SMS history
-router.get('/history', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    getSMSHistory
-);
+router.use(protect, committee());
+router.get('/', c.listMessages);
+router.get('/stats', c.smsStats);
+router.post('/send', c.sendMessage);
 
 module.exports = router;

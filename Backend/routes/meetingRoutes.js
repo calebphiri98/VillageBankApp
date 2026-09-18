@@ -1,39 +1,12 @@
-const express = require('express');
-const router = express.Router();
-const { 
-    createMeeting, 
-    getAllMeetings, 
-    getMeetingById, 
-    getMemberAttendance 
-} = require('../controllers/meetingController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const router = require('express').Router();
+const c = require('../controllers/meetingController');
+const { protect, committee } = require('../middleware/auth');
 
-// Create a meeting
-router.post('/', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    createMeeting
-);
-
-// Get all meetings
-router.get('/', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    getAllMeetings
-);
-
-// Get a specific meeting with attendance
-router.get('/:id', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    getMeetingById
-);
-
-// Get attendance history of a member
-router.get('/member/:memberId/attendance', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
-    getMemberAttendance
-);
+router.use(protect);
+router.get('/', c.listMeetings);
+router.get('/:id', c.getMeeting);
+router.post('/', committee(), c.createMeeting);
+router.patch('/:id', committee(), c.updateMinutes);
+router.put('/:id/attendance', committee(), c.saveAttendance);
 
 module.exports = router;

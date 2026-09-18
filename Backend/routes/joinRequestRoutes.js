@@ -1,19 +1,10 @@
-const express = require('express');
-const router = express.Router();
-const {
-    submitJoinRequest,
-    getAllJoinRequests,
-    getPendingRequests,
-    updateJoinRequestStatus
-} = require('../controllers/joinRequestController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const router = require('express').Router();
+const c = require('../controllers/joinRequestController');
+const { protect, committee } = require('../middleware/auth');
 
-// Public route - anyone can submit a request
-router.post('/submit', submitJoinRequest);
-
-// Committee only
-router.get('/', protect, authorize('admin', 'treasurer', 'secretary', 'chairperson'), getAllJoinRequests);
-router.get('/pending', protect, authorize('admin', 'treasurer', 'secretary', 'chairperson'), getPendingRequests);
-router.put('/:id/status', protect, authorize('admin', 'treasurer', 'secretary', 'chairperson'), updateJoinRequestStatus);
+router.post('/', c.submitRequest);                  // public: no login
+router.get('/', protect, c.listRequests);
+router.post('/:id/vote', protect, c.vote);          // every member gets a say
+router.patch('/:id', protect, committee(), c.decideRequest);
 
 module.exports = router;

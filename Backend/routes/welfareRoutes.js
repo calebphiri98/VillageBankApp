@@ -1,43 +1,11 @@
-const express = require('express');
-const router = express.Router();
-const { 
-    recordContribution, 
-    recordAssistance, 
-    getWelfareBalance, 
-    getWelfareHistory, 
-    getWelfareReport 
-} = require('../controllers/welfareController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const router = require('express').Router();
+const c = require('../controllers/welfareController');
+const { protect, committee } = require('../middleware/auth');
 
-// Record a contribution
-router.post('/contribute', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    recordContribution
-);
-
-// Record welfare assistance / payout
-router.post('/assist', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    recordAssistance
-);
-
-// Get current balance
-router.get('/balance', protect, getWelfareBalance);
-
-// Get full transaction history
-router.get('/history', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    getWelfareHistory
-);
-
-// Get summary report
-router.get('/report', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    getWelfareReport
-);
+router.use(protect);
+router.get('/', c.listWelfare);
+router.get('/balance', c.getBalance);
+router.post('/contribution', committee(), c.recordContribution);
+router.post('/payout', committee(), c.recordPayout);
 
 module.exports = router;

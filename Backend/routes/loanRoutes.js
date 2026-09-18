@@ -1,71 +1,14 @@
-const express = require('express');
-const router = express.Router();
-const { 
-    applyLoan, 
-    updateLoanStatus, 
-    recordRepayment, 
-    getAllLoans, 
-    getMemberLoans, 
-    getOutstandingLoans,
-    getLoanRepayments,
-    getLoanStatement
-} = require('../controllers/loanController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const router = require('express').Router();
+const c = require('../controllers/loanController');
+const { protect, authorize, committee } = require('../middleware/auth');
 
-// Apply / record a loan
-router.post('/apply', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
-    applyLoan
-);
-
-// Approve or Reject a loan
-router.put('/:id/status', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    updateLoanStatus
-);
-
-// Record a repayment
-router.post('/repay', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    recordRepayment
-);
-
-// Get all loans
-router.get('/', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    getAllLoans
-);
-
-// Get outstanding loans summary
-router.get('/outstanding', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    getOutstandingLoans
-);
-
-// Get loans of a specific member
-router.get('/member/:memberId', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
-    getMemberLoans
-);
-
-// Get repayment history of a loan
-router.get('/:id/repayments', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
-    getLoanRepayments
-);
-
-// Get full loan statement
-router.get('/:id/statement', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
-    getLoanStatement
-);
+router.use(protect);
+router.get('/', c.listLoans);                                   // members see their own
+router.get('/overdue', committee(), c.overdueLoans);
+router.post('/', c.applyLoan);                                  // a member may apply for herself
+router.post('/remind', committee(), c.sendReminders);
+router.get('/:id', c.getLoan);
+router.patch('/:id/decision', authorize('admin', 'treasurer', 'secretary'), c.decideLoan);
+router.post('/:id/repayments', authorize('admin', 'treasurer'), c.recordRepayment);
 
 module.exports = router;

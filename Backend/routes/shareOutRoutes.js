@@ -1,31 +1,13 @@
-const express = require('express');
-const router = express.Router();
-const { 
-    performShareOut, 
-    getAllShareOuts, 
-    getShareOutById 
-} = require('../controllers/shareOutController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const router = require('express').Router();
+const c = require('../controllers/shareOutController');
+const { protect, authorize, committee } = require('../middleware/auth');
 
-// Perform Share-Out (Committee only)
-router.post('/', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    performShareOut
-);
-
-// Get all share-out records
-router.get('/', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    getAllShareOuts
-);
-
-// Get a specific share-out record
-router.get('/:id', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    getShareOutById
-);
+router.use(protect);
+router.get('/', committee(), c.listShareOuts);
+router.get('/mine', c.myShare);
+router.get('/preview', committee(), c.preview);
+router.post('/', authorize('admin', 'treasurer'), c.createShareOut);
+router.post('/:id/distribute', authorize('admin', 'treasurer'), c.distribute);
+router.get('/:id', c.getShareOut);
 
 module.exports = router;

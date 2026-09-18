@@ -1,47 +1,10 @@
-const express = require('express');
-const router = express.Router();
-const { 
-    getAllMembers, 
-    getMemberById, 
-    createMember, 
-    updateMember, 
-    deleteMember 
-} = require('../controllers/memberController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const router = require('express').Router();
+const c = require('../controllers/memberController');
+const { protect, committee } = require('../middleware/auth');
 
-// Get all members
-router.get('/', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    getAllMembers
-);
-
-// Get single member
-router.get('/:id', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson', 'member'), 
-    getMemberById
-);
-
-// Create member
-router.post('/', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    createMember
-);
-
-// Update member
-router.put('/:id', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    updateMember
-);
-
-// Deactivate member (soft delete)
-router.delete('/:id', 
-    protect, 
-    authorize('admin', 'treasurer', 'secretary', 'chairperson'), 
-    deleteMember
-);
+router.use(protect);
+router.get('/', c.listMembers);
+router.get('/me', c.getMyRecord);
+router.get('/:id', c.getMember);
 
 module.exports = router;
